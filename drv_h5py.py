@@ -134,18 +134,19 @@ def __read_info(h5):
         if isinstance(h5[key], h5py.Group):
             grp_lst.append(key)
         else:
-            info[key] = h5[key][()]
+            content = h5[key][()]
+            
+            if isinstance(content, np.ndarray):
+                content = list(content)
+            elif isinstance(content, tuple):
+                content = list(content)
+            
+            info[key] = content
+            
     
     # Process the grp_lst
     for key in grp_lst:
-        content = __read_info(h5[key])
-        
-        if isinstance(content, np.ndarray):
-            content = list(content)
-        elif isinstance(content, np.ndarray):
-            content = list(content)
-        
-        info[key] = content
+        info[key] = __read_info(h5[key])
     
     return info
 
