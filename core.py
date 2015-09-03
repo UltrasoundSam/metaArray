@@ -224,6 +224,14 @@ class metaArray(object):
             
             self_info['range'] = range_info(self_info['range'])
             
+            # Make sure they are in list type, they have to be mutable
+            self_info['range']['begin'] = list(self_info['range']['begin']) # Beginning coordinates
+            self_info['range']['end'] = list(self_info['range']['end'])     # Ending coordinates
+            self_info['range']['unit'] = list(self_info['range']['unit'])   # Unit
+            self_info['range']['label'] = list(self_info['range']['label']) # Label
+            self_info['range']['log'] = list(self_info['range']['log'])     # Lin / log scale
+            self_info['range']['fft'] = list(self_info['range']['fft'])     # Data order (see numpy.fft.fftshift)
+            
         else:
             # Range is the corresponding xyz index
             if debug: print "*** Generating default range descriptions"
