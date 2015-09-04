@@ -782,7 +782,7 @@ def lbl_repr(label = None, unit = None, string = None):
         if unit == '':
             pass                    # Unit less quantities
         else:
-            lbl += ' (' + r'$' + unit + r'$'+')'
+            lbl += ' ('  + unit + ')'
     except TypeError:
         # Most likely unit is not defined, i.e. not a string.
         lbl += ' (Arb.)'
