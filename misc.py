@@ -506,7 +506,7 @@ def prettyunit(unit, v0, v1):
     v1 *= scale
     
     if short_hand == 'u':
-        unit = '$\mu$ ' + unit
+        unit = '$\mu$' + unit
         #unit = short_hand + unit
     else:
         unit = short_hand + unit
