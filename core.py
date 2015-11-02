@@ -1303,29 +1303,29 @@ class metaArray(object):
         """
         return self.data.min()
         
-    def max(self):
+    def max(self, axis=None):
         """
         Max value of the data array
         """
-        return self.data.max()
+        return self.data.max(axis)
     
-    def argmin(self):
+    def argmin(self, axis=None):
         """
         argMin value of the data array in x-y-z space
         """        
-        return self._i2x(self.data.argmin())
+        return self._i2x(self.data.argmin(axis))
         
-    def argmax(self):
+    def argmax(self, axis=None):
         """
         argMax value of the data array in x-y-z space
         """
-        return self._i2x(self.data.argmax())
+        return self._i2x(self.data.argmax(axis))
     
-    def ptp(self):
+    def ptp(self, axis=None):
         """
         Peak to peak value of the data array
         """
-        return self.data.ptp()
+        return self.data.ptp(axis)
         
     
     def log10(self):
