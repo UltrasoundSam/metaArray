@@ -18,7 +18,7 @@ __all__ = ["metaArray", "dirPath", "filePath", "file_list",\
 "mother_morlet", "resample", "spline_resize", "meta_resample",\
 "meta_resample", "padding_calc", "meta_lowpass", "rfft", "stfft", "cwt",\
 "isf", "DPO2000_csv", "TDS2000_csv", "DPO2000_isf", "pout_hist",\
-"data_out1", "plot1d", "plot2d", "plotcomplex", "plotcomplexpolar"]
+"data_out1", "plot1d", "plot2d", "plotcomplex", "plotcomplexpolar", "drv_h5py"]
 
 ## Mathematical and Physical constants definition
 # import constants
@@ -39,7 +39,7 @@ from metaTrans import rfft, stfft, cwt
 # Basic file driver classes
 # from drv_fortran import binrecord
 # from drv_csv import csv_file
-# from drv_h5py import to_h5, from_h5       # Require h5py 
+from drv_h5py import to_h5, from_h5       # Require h5py 
 
 # Higher level driver classes
 from drv_Tek import isf, DPO2000_csv, TDS2000_csv, DPO2000_isf
