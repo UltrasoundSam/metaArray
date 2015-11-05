@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
 import os
 
 """Utility function to read the README file.
@@ -20,6 +20,5 @@ setup(name='metaArray',
 	url='http://warwickultrasound.co.uk/',
 	packages=['metaArray'],
 	long_description=read('README'),
+	install_requires = ['matplotlib', 'numpy>=1.6.1']
      )
-
-# install_requires = ['numpy>=1.6.1']
