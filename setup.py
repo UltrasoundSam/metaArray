@@ -13,11 +13,11 @@ def read(fname):
 
 
 setup(name='metaArray',
-      version='0.9.9',
-      description='meta-info container for numpy ndarray, with associate libraries.',
-      author='Charley (Yichao) Fan',
-      author_email='y.fan@warwick.ac.uk',
-      url='http://warwickultrasound.co.uk/',
-      packages=['metaArray'],
-      long_description=read('README.md'),
+	version='0.9.9',
+	description='meta-info container for numpy ndarray, with associate libraries.',
+	author='Charley (Yichao) Fan',
+	author_email='y.fan@warwick.ac.uk',
+	url='http://warwickultrasound.co.uk/',
+	packages=['metaArray'],
+	long_description=read('README'),
      )
