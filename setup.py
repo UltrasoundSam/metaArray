@@ -21,3 +21,5 @@ setup(name='metaArray',
 	packages=['metaArray'],
 	long_description=read('README'),
      )
+
+# install_requires = ['numpy>=1.6.1']
