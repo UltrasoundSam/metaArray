@@ -20,5 +20,5 @@ setup(name='metaArray',
 	url='http://warwickultrasound.co.uk/',
 	packages=['metaArray'],
 	long_description=read('README'),
-	install_requires = ['matplotlib', 'numpy>=1.6.1']
+	install_requires = ['matplotlib', 'numpy', 'h5py']
      )
