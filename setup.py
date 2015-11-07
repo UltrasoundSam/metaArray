@@ -19,6 +19,6 @@ setup(name='metaArray',
 	author_email='y.fan@warwick.ac.uk',
 	url='http://warwickultrasound.co.uk/',
 	packages=['metaArray'],
-	long_description=read('README'),
+	long_description=read('README.md'),
 	install_requires = ['matplotlib', 'numpy', 'h5py']
      )
