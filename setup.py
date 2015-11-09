@@ -19,6 +19,9 @@ setup(name='metaArray',
 	author_email='y.fan@warwick.ac.uk',
 	url='http://warwickultrasound.co.uk/',
 	packages=['metaArray'],
-	long_description=read('README.md'),
+	long_description="""
+	Wrapper for combining numpy ndarrays with meta information. Also has useful utilities;
+	for example, reading in data files from PZFlex, binary data from oscilloscopes, talking
+	to impedance analysers, etc.""",
 	install_requires = ['matplotlib', 'numpy', 'h5py']
      )
