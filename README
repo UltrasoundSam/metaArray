@@ -98,7 +98,7 @@ Unit definitions are default to None, i.e. undefined/Arb. Unitless quantities
 
 Module comes with demonstration function to illustrate metaArray usage. In python shell:
 
-> from metaArray import example
->
-> example.demo()
+>>> from metaArray import demo
+>>>
+>>> demo()
 
