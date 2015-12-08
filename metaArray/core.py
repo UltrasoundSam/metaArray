@@ -200,49 +200,90 @@ class metaArray(object):
         self.debug = debug
         
         
-        # Use the specified 'info' parameter if given
+        
+        # Generate the default meta_info
+        if debug: print "*** Generating the default meta_info"
+        
         # These are global attributes
+        self_info = {'name':None, \
+                     'unit':None, \
+                    'label':None, \
+                 'resample':False}
+        
+        # Range is the corresponding xyz index
+        if debug: print "*** Generating default range descriptions"
+        
+        # These are per-axis attributes
+        self_info['range'] = range_info()
+        self_info['range']['begin'] = list(zeros(ndim, dtype=float))    # Beginning coordinates
+        self_info['range']['end'] = list(array(shape, dtype=float))     # Ending coordinates
+        self_info['range']['unit'] = [ None ] * ndim                    # Unit
+        self_info['range']['label'] = [ None ] * ndim                   # Label
+        self_info['range']['log'] = [ False ] * ndim                    # Lin / log scale
+        self_info['range']['fft'] = [ False ] * ndim                    # Data order (see numpy.fft.fftshift)
+        
+        # If info parameter is given, update them accordingly
         if info is not None:
-            
             if debug: print "*** meta_info was supplied"
             
-            self_info = info
+            if info.has_key('name'): self_info['name'] = info['name']
+            if info.has_key('unit'): self_info['unit'] = info['unit']
+            if info.has_key('label'): self_info['label'] = info['label']
+            if info.has_key('resample'): self_info['resample'] = info['resample']
             
-        else:
-            if debug: print "*** Generating the default meta_info"
-            
-            self_info = {'name':None, \
-                         'unit':None, \
-                        'label':None, \
-                     'resample':False}
+            if info.has_key('range'):
+                
+                if info['range'].has_key('begin'): self_info['range']['begin'] = list(info['range']['begin'])
+                if info['range'].has_key('end'): self_info['range']['end'] = list(info['range']['end'])
+                if info['range'].has_key('unit'): self_info['range']['unit'] = list(info['range']['unit'])
+                if info['range'].has_key('label'): self_info['range']['label'] = list(info['range']['label'])
+                if info['range'].has_key('log'): self_info['range']['log'] = list(info['range']['log'])
+                if info['range'].has_key('fft'): self_info['range']['fft'] = list(info['range']['fft'])
         
-        # Check if range info is given
-        # These are per-axis attributes
-        if self_info.has_key('range'):
+        
+        ## Use the specified 'info' parameter if given
+        ## These are global attributes
+        #if info is not None:
             
-            if debug: print "*** Range description is available"
+            #if debug: print "*** meta_info was supplied"
             
-            self_info['range'] = range_info(self_info['range'])
+            #self_info = info
             
-            # Make sure they are in list type, they have to be mutable
-            self_info['range']['begin'] = list(self_info['range']['begin']) # Beginning coordinates
-            self_info['range']['end'] = list(self_info['range']['end'])     # Ending coordinates
-            self_info['range']['unit'] = list(self_info['range']['unit'])   # Unit
-            self_info['range']['label'] = list(self_info['range']['label']) # Label
-            self_info['range']['log'] = list(self_info['range']['log'])     # Lin / log scale
-            self_info['range']['fft'] = list(self_info['range']['fft'])     # Data order (see numpy.fft.fftshift)
+        #else:
+            #if debug: print "*** Generating the default meta_info"
             
-        else:
-            # Range is the corresponding xyz index
-            if debug: print "*** Generating default range descriptions"
+            #self_info = {'name':None, \
+                         #'unit':None, \
+                        #'label':None, \
+                     #'resample':False}
+        
+        ## Check if range info is given
+        ## These are per-axis attributes
+        #if self_info.has_key('range'):
             
-            self_info['range'] = range_info()
-            self_info['range']['begin'] = list(zeros(ndim, dtype=float))    # Beginning coordinates
-            self_info['range']['end'] = list(array(shape, dtype=float))     # Ending coordinates
-            self_info['range']['unit'] = [ None ] * ndim                    # Unit
-            self_info['range']['label'] = [ None ] * ndim                   # Label
-            self_info['range']['log'] = [ False ] * ndim                    # Lin / log scale
-            self_info['range']['fft'] = [ False ] * ndim                    # Data order (see numpy.fft.fftshift)
+            #if debug: print "*** Range description is available"
+            
+            #self_info['range'] = range_info(self_info['range'])
+            
+            ## Make sure they are in list type, they have to be mutable
+            #self_info['range']['begin'] = list(self_info['range']['begin']) # Beginning coordinates
+            #self_info['range']['end'] = list(self_info['range']['end'])     # Ending coordinates
+            #self_info['range']['unit'] = list(self_info['range']['unit'])   # Unit
+            #self_info['range']['label'] = list(self_info['range']['label']) # Label
+            #self_info['range']['log'] = list(self_info['range']['log'])     # Lin / log scale
+            #self_info['range']['fft'] = list(self_info['range']['fft'])     # Data order (see numpy.fft.fftshift)
+            
+        #else:
+            ## Range is the corresponding xyz index
+            #if debug: print "*** Generating default range descriptions"
+            
+            #self_info['range'] = range_info()
+            #self_info['range']['begin'] = list(zeros(ndim, dtype=float))    # Beginning coordinates
+            #self_info['range']['end'] = list(array(shape, dtype=float))     # Ending coordinates
+            #self_info['range']['unit'] = [ None ] * ndim                    # Unit
+            #self_info['range']['label'] = [ None ] * ndim                   # Label
+            #self_info['range']['log'] = [ False ] * ndim                    # Lin / log scale
+            #self_info['range']['fft'] = [ False ] * ndim                    # Data order (see numpy.fft.fftshift)
         
         # Assemble the metaArray
         self.data = self_data
@@ -1297,12 +1338,12 @@ class metaArray(object):
         
         return True
         
-    def min(self):
+    def min(self, axis=None):
         """
         Min value of the data array
         """
-        return self.data.min()
-        
+        return self.data.min(axis)
+    
     def max(self, axis=None):
         """
         Max value of the data array
