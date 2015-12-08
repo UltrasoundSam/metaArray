@@ -64,7 +64,7 @@ to impedance analysers, etc.
 
 Module comes with demonstration function to illustrate metaArray usage. In python shell:
 
-> from metaArray import example
->
-> example.demo()
+>>> from metaArray import demo
+>>>
+>>> demo()
 
