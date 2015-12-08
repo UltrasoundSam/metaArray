@@ -588,7 +588,9 @@ def plot1d(metaAry, size = (10, 7.5), dpi = 75, grid = True, legend = None, font
     
     if axis['log'][0] == False:
         x = linspace(x0, x1, len(metaAry))
+        # x1 = metaAry.get_axis()
     else:
+        x = metaAry.get_axis()
         raise NotImplemented
     
     if label is None:
@@ -617,15 +619,15 @@ def plot1d(metaAry, size = (10, 7.5), dpi = 75, grid = True, legend = None, font
 
 
 def plot2d(metaAry, size = (10, 7.5), dpi = 75, fontsize = 15, cmap = None, \
-            nticks = 5, aspect_ratio = 1.0, corient = 'vertical', cformat = None, 
-            vmin = None, vmax = None, interpolation = 'sinc'):
+            nticks = 5, aspect_ratio = 1.0, corient = 'vertical', cformat = None, show_cbar = True, 
+            vmin = None, vmax = None, interpolation = 'sinc', fig = None, ax = None):
     """
     metaArray function to do a simple 2D plot.
     
     size            Plot size, default to (10, 7.5)
     dpi             Dot Per Inch for raster graphics
     fontsize        Norminal font size
-    cmap            Colour map, default is pyplot.cm.spectral
+    cmap            Colour map, default is pyplot.cm.hot
     nticks          Number of ticks in the colour bar
     aspect_ratio    Aspect ratio of the plot {float|'ij'|'xy'}
                         float:  Fixed aspect ratio by the given number
@@ -643,7 +645,8 @@ def plot2d(metaAry, size = (10, 7.5), dpi = 75, fontsize = 15, cmap = None, \
     """
     
     if cmap is None:
-        cmap = cm.spectral
+        #cmap = cm.spectral
+        cmap = cm.hot
     
     if corient is not 'horizontal':
         corient = 'vertical'
@@ -731,21 +734,23 @@ def plot2d(metaAry, size = (10, 7.5), dpi = 75, fontsize = 15, cmap = None, \
     for i in range(nticks):
         ticks_lbl.append("%(val)0.4g" % {'val':ticks[i]})
     
-    fig = figure(figsize=size, dpi = dpi)
-    ax = fig.add_subplot(111)
+    if fig == None: fig = figure(figsize=size, dpi = dpi)
+    
+    if ax == None: ax = fig.add_subplot(111)
     
     extent = (x0, x1, y0, y1)
     cax = ax.imshow(data.transpose()[::-1], cmap=cmap, extent=extent, interpolation = interpolation, vmin = v0, vmax = v1, aspect=ratio)
-    cbar = fig.colorbar(cax, ticks=ticks, orientation=corient, format=cformat)
+    if show_cbar:
+        cbar = fig.colorbar(cax, ticks=ticks, orientation=corient, format=cformat)
+        
+        # Add colorbar, make sure to specify tick locations to match desired ticklabels
+        cbar.ax.set_yticklabels(ticks_lbl)
+        cbar.set_label(vlabl, fontsize=fontsize)
     
     # ax.set_size(fontsize)
     ax.set_xlabel(xlabl, fontsize=fontsize)     #   Label font size
     ax.set_ylabel(ylabl, fontsize=fontsize)
     rcParams.update({'font.size': fontsize})    #   Value font size
-    
-    # Add colorbar, make sure to specify tick locations to match desired ticklabels
-    cbar.ax.set_yticklabels(ticks_lbl)
-    cbar.set_label(vlabl, fontsize=fontsize)
     
     if fontsize is not None:
         ax.set_title(metaAry['name'], fontsize=int(fontsize*1.3))
@@ -782,7 +787,7 @@ def lbl_repr(label = None, unit = None, string = None):
         if unit == '':
             pass                    # Unit less quantities
         else:
-            lbl += ' ('  + unit + ')'
+            lbl += ' (' + r'$' + unit + r'$'+')'
     except TypeError:
         # Most likely unit is not defined, i.e. not a string.
         lbl += ' (Arb.)'
