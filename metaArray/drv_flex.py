@@ -25,6 +25,7 @@ from os import linesep, sep
 from struct import calcsize
 from numpy import array
 from numpy import fromstring
+from copy import copy
 
 from misc import filePath
 from misc import gettypecode
@@ -731,7 +732,7 @@ class data_out1(flex_files):
                 ilen = (iend - ibegin + 1)   # Beginning and ends inclusive
                 jlen = (jend - jbegin + 1)
                 klen = (kend - kbegin + 1)
-                
+                 
                 B[2] = ilen * jlen * klen   # Length of the array
                 B[3] = (ilen, jlen, klen)   # Shape of the array
                 
@@ -806,7 +807,7 @@ class data_out1(flex_files):
             A_idx.append([desc['name'], \
                         desc['ntmstp'], \
                         desc['time'], \
-                        B, \
+                        copy(B), \
                         B_pos, \
                         B_parts, \
                         [ibegin, jbegin, kbegin], \
