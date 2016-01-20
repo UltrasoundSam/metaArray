@@ -729,7 +729,7 @@ def plot2d(metaAry, size = (10, 7.5), dpi = 75, fontsize = 15, cmap = None, \
     # Matplotlib inshow data in transposed from metaArray convension
     # And it adjust the aspect ratio based on the prefix corrected number
     ratio /= float(y1 - y0) / float(x1 - x0)
-    ratio = abs(ratio)          #  This is the number fed to matplotlib
+    ratio = float(abs(ratio))          #  This is the number fed to matplotlib
     
     for i in range(nticks):
         ticks_lbl.append("%(val)0.4g" % {'val':ticks[i]})
@@ -787,7 +787,7 @@ def lbl_repr(label = None, unit = None, string = None):
         if unit == '':
             pass                    # Unit less quantities
         else:
-            lbl += ' (' + r'$' + unit + r'$'+')'
+            lbl += ' (' + unit + ')'
     except TypeError:
         # Most likely unit is not defined, i.e. not a string.
         lbl += ' (Arb.)'

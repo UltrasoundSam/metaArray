@@ -1,6 +1,6 @@
-short_version = '0.9'
-version = '0.9.9'
-full_version = '0.9.9 2015-11-07'
+short_version = '1.0'
+version = '1.0.0'
+full_version = '1.0.0 2016-01-20'
 release = True
 
 if not release:
