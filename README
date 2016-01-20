@@ -17,9 +17,7 @@ Before installing, make sure that you have installed all of the prerequiste depe
 	Numpy		- For data processing and scientific computing		(http://www.numpy.org/)
 	Matplotlib	- For plotting										(http://matplotlib.org/)
 	H5Py		- For stable and cross platform data storage		(http://www.h5py.org/)
-
-Also, whilst not required for metaArray, scipy (http://www.scipy.org/) is a very useful
-module for scientific computing and data processing.
+	Scipy		- For scientific computing							(http://www.scipy.org/)
 
 ===================
 Install
