@@ -259,8 +259,8 @@ def meta_resample(metAry, rate=False, l=0.005, window='hamming', order=5):
             # This really shouldnt happen, but just in case the Decimal
             # function return numbers like 0.123e+45 instead of 1.23e+45
             scale = 1
-            print "Warning!! Unexpected values for scale evaluation!" + \
-            'scale variable (' + str(scale) + ') should be greater than 1.'
+            print("Warning!! Unexpected values for scale evaluation!" + \
+            'scale variable (' + str(scale) + ') should be greater than 1.')
 
         # This is what the sampling rate should be
         rate = scale * 10**exponent
