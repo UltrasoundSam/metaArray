@@ -21,7 +21,8 @@ __all__ = ["metaArray", "dirPath", "filePath", "file_list",\
 "mother_morlet", "resample", "spline_resize", "meta_resample",\
 "meta_resample", "padding_calc", "meta_lowpass", "rfft", "stfft", "cwt",\
 "isf", "DPO2000_csv", "TDS2000_csv", "DPO2000_isf", "pout_hist",\
-"data_out1", "plot1d", "plot2d", "plotcomplex", "plotcomplexpolar", "drv_h5py"]
+"data_out1", "plot1d", "plot2d", "plotcomplex", "plotcomplexpolar",\
+ "drv_h5py", "Ritec4000"]
 
 ## Mathematical and Physical constants definition
 # import constants
@@ -44,7 +45,7 @@ from metaArray.metaTrans import rfft, stfft, cwt
 # from drv_fortran import binrecord
 # from drv_csv import csv_file
 from metaArray.drv_h5py import to_h5, from_h5       # Require h5py
-
+from metaArray.drv_ritec import Ritec4000
 # Higher level driver classes
 from metaArray.drv_Tek import isf, DPO2000_csv, TDS2000_csv, DPO2000_isf
 from metaArray.drv_flex import pout_hist, data_out1
