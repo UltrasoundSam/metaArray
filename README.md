@@ -18,6 +18,7 @@ Before installing, make sure that you have installed all of the prerequiste depe
 	Matplotlib	- For plotting										(http://matplotlib.org/)
 	H5Py		- For stable and cross platform data storage		(http://www.h5py.org/)
 	Scipy		- For scientific computing							(http://www.scipy.org/)
+    pySerial    - For serial port communications                    (https://pythonhosted.org/pyserial/)
 
 ===================
 Install

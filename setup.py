@@ -23,5 +23,5 @@ setup(name='metaArray',
 	Wrapper for combining numpy ndarrays with meta information. Also has useful utilities;
 	for example, reading in data files from PZFlex, binary data from oscilloscopes, talking
 	to impedance analysers, etc.""",
-	install_requires = ['matplotlib', 'numpy', 'h5py', 'scipy', 'serial']
+	install_requires = ['matplotlib', 'numpy', 'h5py', 'scipy', 'pyserial']
      )
