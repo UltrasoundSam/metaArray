@@ -115,7 +115,6 @@ def to_h5(metAry, dest, debug=False):
     return
 
 
-
 def __read_info(h5):
     """
     Recursively read items the given h5py object into dict
@@ -150,16 +149,15 @@ def __read_info(h5):
     return info
 
 
-
 def from_h5(src, debug=False):
     """
     Read the HDF5 file in the given path, build the metAry accordingly.
 
     dest can be string or h5py.Group object.
 
-    If dest is a string, it is interpret as the destination file path.
+    If src is a string, it is interpret as the destination file path.
 
-    If dest is a h5py.Group object, the content will be read from the given group.
+    If src is a h5py.Group object, the content will be read from the given group.
 
     """
 
@@ -171,13 +169,14 @@ def from_h5(src, debug=False):
     # Reading from file path
     path = filePath(src)
 
+    if not path.exist:
+        raise IOError('File ' + str(path.full) + ' does not exist')
+    
     if not path.read:
-        raise ValueError("Unable to read from: " + str(path.full))
+        raise IOError("Unable to read from: " + str(path.full))
 
     with h5py.File(path.full, 'r') as f:
         ary = f['ndarray'][()]          # Read the array
         info = __read_info(f['info'])   # Read the meta info
-
-
 
     return metaArray(ary, info=info)
