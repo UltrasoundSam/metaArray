@@ -18,9 +18,7 @@
 This file contain a number of mathematical and physical constants definition
 '''
 
-from numpy import log
-from numpy import sqrt
-from numpy import pi
+from numpy import log, sqrt, pi
 
 # Ratio between FWHM and sigma of a Gauss curve = sqrt{8*ln2)
 # 2.3548200450309493

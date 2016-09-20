@@ -20,9 +20,13 @@ from os.path import join
 from os import linesep
 
 from textwrap import TextWrapper
-import cStringIO
 
 from metaArray.misc import filePath
+
+try:
+    import cStringIO
+except ImportError:
+    import io as cStringIO
 
 # Enviromental variables
 demo_dir = join(filePath(__file__).baseDir, 'example')

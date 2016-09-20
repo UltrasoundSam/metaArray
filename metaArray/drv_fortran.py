@@ -101,13 +101,13 @@ class binrecord(object):
             print(msg)
 
         if debug:
-            print'file_path: ', self.file_path.full
+            print('file_path: ', self.file_path.full)
 
-            print'unpack_str: ', self.unpack_str
-            print'header_len: ', self.header_len
+            print('unpack_str: ', self.unpack_str)
+            print('header_len: ', self.header_len)
 
-            print'record_pos: ', self.record_pos
-            print'record_num: ', self.record_num
+            print('record_pos: ', self.record_pos)
+            print('record_num: ', self.record_num)
 
         return
 
