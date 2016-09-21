@@ -54,12 +54,15 @@ from metaArray.misc import filePath
 
 import numpy as np
 
+# Special dtype for encoding variable length unicode strings
+vutf = h5py.special_dtype(vlen=unicode)
+
 def __dict_loop(dic, h5):
     """
     Recursively store items in a dictionary object into given h5py object as
     h5py.Dataset.
 
-    If the dictionary item is itself an dictrionay object, create a h5py.Group,
+    If the dictionary item is itself an dictionary object, create a h5py.Group,
     and store subsequent items within.
     """
 
@@ -71,7 +74,7 @@ def __dict_loop(dic, h5):
         if isinstance(dic[key], dict):
             dict_lst.append(key)
         else:
-            h5.create_dataset(key, data=dic[key])
+            h5.create_dataset(key, data=dic[key], dtype=vutf)
 
     # Process the dic_lst
     for key in dict_lst:
