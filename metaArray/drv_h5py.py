@@ -54,9 +54,6 @@ from metaArray.misc import filePath
 
 import numpy as np
 
-# Special dtype for encoding variable length unicode strings
-vutf = h5py.special_dtype(vlen=unicode)
-
 def __dict_loop(dic, h5):
     """
     Recursively store items in a dictionary object into given h5py object as
@@ -74,7 +71,7 @@ def __dict_loop(dic, h5):
         if isinstance(dic[key], dict):
             dict_lst.append(key)
         else:
-            h5.create_dataset(key, data=dic[key], dtype=vutf)
+            h5.create_dataset(key, data=dic[key])
 
     # Process the dic_lst
     for key in dict_lst:
@@ -103,7 +100,6 @@ def to_h5(metAry, dest, debug=False):
         dest.create_dataset('ndarray', data=metAry.data)    # Write the array
         __dict_loop(metAry.info, dest.create_group('info')) # Write the meta info
         return
-
 
     # Writing file to path
     path = filePath(dest)
@@ -174,7 +170,7 @@ def from_h5(src, debug=False):
 
     if not path.exist:
         raise IOError('File ' + str(path.full) + ' does not exist')
-    
+
     if not path.read:
         raise IOError("Unable to read from: " + str(path.full))
 

@@ -220,21 +220,50 @@ class metaArray(object):
         if info is not None:
             if debug: print("*** meta_info was supplied")
 
-            if 'name' in info: self_info['name'] = info['name']
-            if 'unit' in info: self_info['unit'] = info['unit']
-            if 'label' in info: self_info['label'] = info['label']
+            '''
+            Some annoyance with h5py and python 3 - now have separate
+            byte and str structures in python3. As the metaInfo strings
+            are getting converted into byte structures in h5py process,
+            these have to be decoded into string objects. Don't know
+            where else this may be a problem, so solvin
+            '''
+            if 'name' in info: 
+                if isinstance(info['name'], bytes):
+                    info['name'] = info['name'].decode('utf8')
+                self_info['name'] = info['name']
+
+            if 'unit' in info: 
+                if isinstance(info['unit'], bytes):
+                    info['unit'] = info['unit'].decode('utf8')
+                self_info['unit'] = info['unit']
+
+            if 'label' in info:
+                if isinstance(info['label'], bytes):
+                    info['label'] = info['label'].decode('utf8')
+                self_info['label'] = info['label']
+
             if 'resample' in info: self_info['resample'] = info['resample']
 
             if 'range' in info:
 
                 if 'begin' in info['range']: self_info['range']['begin'] = list(info['range']['begin'])
                 if 'end' in info['range']: self_info['range']['end'] = list(info['range']['end'])
-                if 'unit' in info['range']: self_info['range']['unit'] = list(info['range']['unit'])
-                if 'label' in info['range']: self_info['range']['label'] = list(info['range']['label'])
                 if 'log' in info['range']: self_info['range']['log'] = list(info['range']['log'])
                 if 'fft' in info['range']: self_info['range']['fft'] = list(info['range']['fft'])
-
-
+                # Same byte object problems - decoding into strings
+                if 'unit' in info['range']: 
+                    Temp = info['range']['unit']
+                    if isinstance(Temp[0], bytes):
+                        self_info['range']['unit'] = [val.decode('utf8') for val in Temp]                       
+                    else:
+                        self_info['range']['unit'] = list(Temp)
+               
+                if 'label' in info['range']: 
+                    Temp = info['range']['label']
+                    if isinstance(Temp[0], bytes):
+                        self_info['range']['label'] = [val.decode('utf8') for val in Temp]                       
+                    else:
+                        self_info['range']['label'] = list(Temp)
         ## Use the specified 'info' parameter if given
         ## These are global attributes
         #if info is not None:
