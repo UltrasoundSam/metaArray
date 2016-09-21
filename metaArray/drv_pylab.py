@@ -24,7 +24,7 @@ This file contain a number of drivers classes to matplotlib.
 
 from matplotlib.pyplot import figure
 from matplotlib import cm
-from mpl_toolkits.axes_grid.parasite_axes import SubplotHost
+from mpl_toolkits.axes_grid1.parasite_axes import SubplotHost
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
 
