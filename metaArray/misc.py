@@ -486,7 +486,7 @@ def buffered_search(f, string, start=0, buffer_size=4194304):
         f.seek(f_pos)
         buf = f.read(buffer_size)
 
-        if buf == '':
+        if buf == b'':
             return -1                           # Reached the end of the file
 
         str_pos = buf.find(string)
