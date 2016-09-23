@@ -13,7 +13,7 @@ def read(fname):
 
 
 setup(name='metaArray',
-	version='1.1.0',
+	version='1.1.1',
 	description='meta-info container for numpy ndarray, with associate libraries.',
 	author='Charley (Yichao) Fan',
 	author_email='y.fan@warwick.ac.uk',
