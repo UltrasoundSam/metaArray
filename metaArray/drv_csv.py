@@ -408,11 +408,12 @@ class csv_file(object):
 
         for i in range(self.data_start - 1):
             lst = self.getrow(i)              # ['lbl0', 'val0', 'lbl1', 'val1' ...]
+            lst_len = len(lst)
             # If the current row contains even number of entries
             # Assume the Odd index items are labels, and Even index items are values
-            if len(lst)%2 == 0:
+            if len(lst) >= 2:
                 # [('lbl0', 'val0'), ('lbl1', 'val1'), ...]
-                info_pair += zip(lst[0::2], lst[1::2])
+                info_pair += zip((lst_len-1)*[lst[0]], lst[1:])
 
 
         info_pair.sort(key=itemgetter(0))

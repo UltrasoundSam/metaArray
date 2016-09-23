@@ -454,7 +454,7 @@ class isf(object):
                 desc += index_str + "Data length: " + str(data_len) + linesep
                 desc += index_str + "Unpack string: " + unpack_str + linesep
 
-                for key, val in hdr_dict.iteritems():
+                for key, val in hdr_dict.items():
                     desc += index_str + '[' + key + '] ' + str(val) + linesep
 
                 desc += linesep
@@ -712,13 +712,12 @@ class isf(object):
         data.set_range(0, 'end', XZE + XIN * len(data))
 
         # Include the rest of the metainfo into metaArray
-        for field, value in hdr_dict.iteritems():
+        for field, value in hdr_dict.items():
             data["isf."+field] = value
 
         data.update_range()
 
         return data
-
 
 
 class TDS2000_csv(csv_file):
@@ -854,7 +853,7 @@ class TDS2000_csv(csv_file):
         ary['range']['label'][0] = metainfo['Source']
 
         # Include the rest of the metainfo into metaArray
-        for field, value in metainfo.iteritems():
+        for field, value in metainfo.items():
             ary["TDS2.csv."+field] = value
 
         ary.update_range()
@@ -888,12 +887,9 @@ class TDS2000_csv(csv_file):
         return desc
 
 
-
-
 class DPO2000_csv(csv_file):
     """
     The class define the csv file object saved from the Tek DPO2000 series scopes
-
     #
     # DPO2000 series scopes
     #########################
@@ -901,6 +897,7 @@ class DPO2000_csv(csv_file):
     #
     #    Model,              DPO2014
     #    Firmware Version,   1.25
+    #
     #    Point Format,       Y
     #    Horizontal Units,   S
     #    Horizontal Scale,   1e-05
@@ -925,8 +922,14 @@ class DPO2000_csv(csv_file):
     ###########################################################################
     """
 
-    def __init__(self, path, debug=False):
-
+    def __init__(self, path, data_col=1, debug=False):
+        """
+        data_col option gives the option to choose the data column
+        from csv data file if more than one oscilloscope channel is used.
+        Defaults to prior behaviour (i.e. chooses first data column), 
+        but this can be changed by calling like so:
+        DPO2000_csv('/foo/bar/filename.csv', data_col=2)
+        """
         csv_file.__init__(self, path=path, debug=debug, analyse=True, \
                             field_delimiter=',', text_delimiter='')
 
@@ -942,10 +945,11 @@ class DPO2000_csv(csv_file):
                         "\tExpecting 'Model':'DPO2', got '" + \
                         model[0] + "':'" + model[1][:4] + "' instead.")
 
-            if self.data_start != 15:
+            if self.data_start != 16:
                 print("\t*** Warning, Data stream is thought to start at row index" + \
                         str(self.data_start) + ", instead of the expected 15.")
 
+        self.data_col = data_col
         # File headers should be understood by drv_csv already
         metainfo = self.metainfo
 
@@ -998,9 +1002,16 @@ class DPO2000_csv(csv_file):
         index_name = index[0]
         index = array(index[1:rcd_len+1], dtype=float)
 
-        data = csv_file.getcolumn(self, 1)[self.label_row:]
-        metainfo['Source'] = data[0]
-        data = array(data[1:rcd_len+1], dtype=float)
+        try:
+            data = csv_file.getcolumn(self, self.data_col)[self.label_row:]
+            metainfo['Source'] = data[0]
+            data = array(data[1:rcd_len+1], dtype=float)
+        except IndexError as err:
+            print("Data column doesn't exist:", err)
+            print("Defaulting to first data column")
+            data = csv_file.getcolumn(self, 1)[self.label_row:]
+            metainfo['Source'] = data[0]
+            data = array(data[1:rcd_len+1], dtype=float)
 
         if linearChk(index, debug=self.debug) is not True:
             raise ValueError("The index array is not linear")
@@ -1022,7 +1033,7 @@ class DPO2000_csv(csv_file):
         ary['range']['label'][0] = index_name
 
         # Include the rest of the metainfo into metaArray
-        for field, value in metainfo.iteritems():
+        for field, value in metainfo.items():
             ary["DPO2.csv."+field] = value
 
         ary.update_range()
@@ -1037,7 +1048,6 @@ class DPO2000_csv(csv_file):
         desc += csv_file.__repr__(self)
 
         return desc
-
 
 
 # This is provided for compatibility
