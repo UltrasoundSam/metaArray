@@ -951,7 +951,7 @@ class DPO2000_csv(csv_file):
 
         self.data_col = data_col
         # File headers should be understood by drv_csv already
-        metainfo = self.metainfo
+        metainfo = self.get_meta_col(self.data_col)
 
         # Convert the ASCII representation into numbers
         Pformat = []

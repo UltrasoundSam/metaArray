@@ -396,7 +396,17 @@ class csv_file(object):
 
         return output
 
-
+    def get_meta_col(self, column):
+        """
+        Gets meta info from a particular data column.
+        """
+        metainfo = {}
+        for key, val in self.metainfo.items():
+            metainfo[key] = val[column-1]
+        
+        self.metainfo = metainfo
+        return metainfo
+        
     def getmetainfo(self):
         """
         Some instruments generates csv file headers, try to put those in
@@ -409,8 +419,8 @@ class csv_file(object):
         for i in range(self.data_start - 1):
             lst = self.getrow(i)              # ['lbl0', 'val0', 'lbl1', 'val1' ...]
             lst_len = len(lst)
-            # If the current row contains even number of entries
-            # Assume the Odd index items are labels, and Even index items are values
+            # New layout of metainfo labl, val0, val1, val2...
+            # Disguard empty rows
             if len(lst) >= 2:
                 # [('lbl0', 'val0'), ('lbl1', 'val1'), ...]
                 info_pair += zip((lst_len-1)*[lst[0]], lst[1:])
@@ -419,7 +429,7 @@ class csv_file(object):
         info_pair.sort(key=itemgetter(0))
         for k, g in groupby(info_pair, key=itemgetter(0)):
 
-            val = map(itemgetter(1), g)[0]
+            val = map(itemgetter(1), g)
             if k == '':
                 if ''.join(val) == '':
                     # Ohh dear, all blanks. Skip the entry.
@@ -427,7 +437,14 @@ class csv_file(object):
                 # No idea what the key is, gives it a default value
                 k = 'Unknown'
 
-
+            # Annoyingly, new format doesn't repeat horizontal metadata
+            # or things that apply to all channels
+            horizontal = ['Horizontal Scale', 'Sample Interval', \
+            'Record Length', 'Filter Frequency', 'Horizontal Units', \
+            'Firmware Version', 'Model']
+            # Repeat them manually
+            if k in horizontal:
+                val = (self.cols - 1) * [val[0]]
             metainfo[k] = val
 
         self.metainfo = metainfo
@@ -461,7 +478,10 @@ class csv_file(object):
         metainfo = self.metainfo
         for field in keys:
             if metainfo.has_key(field):
-                metainfo[field] = func(metainfo[field])
+                try:
+                    metainfo[field] = func(metainfo[field])
+                except (ValueError, TypeError):
+                    metainfo[field] = 'Unknown'
 
         self.metainfo = metainfo
         return
