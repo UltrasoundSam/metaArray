@@ -300,7 +300,7 @@ class binrecord(object):
         return self.record_index[key][2] - self.header_len * 2
 
 
-    def __next__(self):
+    def next(self):
         """
         Return the current record, and advance to the next record.
 
