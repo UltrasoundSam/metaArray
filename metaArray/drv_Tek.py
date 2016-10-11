@@ -803,7 +803,7 @@ class TDS2000_csv(csv_file):
         csv_file.update_metainfo(self, Pformat, float)
 
         # Although some of the numbers are saved in float representation they really
-        # ough to be int instead.
+        # ought to be int instead.
         #
         # Converting a float ASCII repr directly will caused an error.
         #    >>> int('2.500000e+03')
@@ -965,7 +965,7 @@ class DPO2000_csv(csv_file):
         csv_file.update_metainfo(self, Pformat, float)
 
         # Although some of the numbers are saved in float representation they really
-        # ough to be int instead.
+        # ought to be int instead.
         #
         # Converting a float ASCII repr directly will caused an error.
         #    >>> int('2.500000e+03')
@@ -1051,5 +1051,4 @@ class DPO2000_csv(csv_file):
 
 
 # This is provided for compatibility
-# isf_DPO2000 = isf
 DPO2000_isf = isf
