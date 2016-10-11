@@ -120,7 +120,7 @@ class binrecord(object):
     def __getitem__(self, key):
         key = self._chk_index(key)
         self.seek(key)
-        return next(self)
+        return self.next()
 
     def __setitem__(self, key, value):
         raise NotImplementedError
