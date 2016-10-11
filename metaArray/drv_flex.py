@@ -23,7 +23,7 @@ to actually the files.
 '''
 
 from os import linesep
-from struct import calcsize
+from struct import calcsize, unpack
 from numpy import fromstring
 from copy import copy
 
@@ -418,7 +418,7 @@ class FlexFiles(object):
 
             # Different fields needs to be unpack differently
             if v_type == 'c': # These are strings, no need to unpack
-                current_entry = record[current_index:next_index]
+                current_entry = record[current_index:next_index].decode()
                 if strip:
                     current_entry = current_entry.strip()
             else:

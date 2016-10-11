@@ -151,7 +151,6 @@ class binrecord(object):
         header_len = self.header_len
         unpack_str = self.unpack_str
 
-
         # The index operation should stop and return what it found if
         # any exception is raised on the way
 
@@ -160,15 +159,15 @@ class binrecord(object):
 
             while True:
                 file_pos = f.tell()
-                head = f.read(header_len)
+                head = bytes(f.read(header_len))
 
-                if head == '':
+                if not head:
                     break # Humm, hit the end of the file, should stop now
 
                 record_len = unpack(unpack_str, head)[0]
 
                 f.seek(file_pos + header_len + record_len)
-                tail = f.read(header_len)
+                tail = bytes(f.read(header_len))
 
                 if head != tail:
                     print("Error, inconsistent record length descriptors")
@@ -182,8 +181,6 @@ class binrecord(object):
                     # | record begin | record end | raw record len |
                     rawRecLen = record_len + header_len + header_len
                     record_index.append([file_pos, file_pos + rawRecLen, rawRecLen])
-
-            # f.close()
 
         self.record_index = record_index
         self.record_num = len(self.record_index)
