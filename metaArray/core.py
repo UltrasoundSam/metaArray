@@ -91,8 +91,8 @@ class range_info(dict):
             try:
                 register[i]()
             except:
-                print("Host object with id: " + str(i) + \
-                "can not be updated, removing from range_info register")
+                print(("Host object with id: " + str(i) + \
+                "can not be updated, removing from range_info register"))
         return
 
     def reg(self, obj, method=None):
@@ -444,7 +444,7 @@ class metaArray(object):
         The key could be a tuple of int, float or slice
         """
         if self.debug:
-            print("*** __proc_key:" + str(key))
+            print(("*** __proc_key:" + str(key)))
 
         key_pair = self._key_pair
         if isinstance(key, slice):
@@ -466,7 +466,7 @@ class metaArray(object):
         if key is tuple, convert xyz indexes to ijk space first, then return self.data[ikey] with corresponding meta info
         """
         if self.debug:
-            print("*** getitem:", key)
+            print(("*** getitem:", key))
 
         # >>> a[1]
         # __getitem__(1)
@@ -508,7 +508,7 @@ class metaArray(object):
                 ikey = keys[0]
                 ijk_key.append(ikey)            # This will be the ijk index pass on to ndarray
                 if self.debug:
-                    print("*** getitem ijk_key component:", ikey)
+                    print(("*** getitem ijk_key component:", ikey))
 
                 if isinstance(ikey, slice):     # Slice are given, update meta info accordingly
                     if ikey.start is None:
@@ -552,8 +552,8 @@ class metaArray(object):
                 # dat = self.data[tuple(ijk_key)].reshape(ijk_shape)     # Obtain the array slice
                 dat = self.data[tuple(ijk_key)]     # Obtain the array slice
             except:
-                print("### ijk_key: " + str(ijk_key))
-                print("### ijk_shape: " + str(ijk_shape))
+                print(("### ijk_key: " + str(ijk_key)))
+                print(("### ijk_shape: " + str(ijk_shape)))
                 raise
 
 
@@ -675,7 +675,7 @@ class metaArray(object):
         Do not support stepping
         """
         if self.debug:
-            print("*** getslice: ", begin, end)
+            print(("*** getslice: ", begin, end))
 
         nfo = self.copy_info()                  # Init the new nfo dict
         nfo_range = nfo['range']
@@ -742,8 +742,8 @@ class metaArray(object):
             region = self.overlap(b)
 
             if self.debug:
-                print("*** Overlap region: " + str(region))
-                print(self[region])
+                print(("*** Overlap region: " + str(region)))
+                print((self[region]))
 
             # Perform the operation on the common region
             newArray = self[region].copy()
@@ -819,12 +819,12 @@ class metaArray(object):
             info_unit = info['unit']
 
             # Remove grand parent info in
-            for field in info.keys():
+            for field in list(info.keys()):
                 if field.find('.') != -1:
                     del info[field]
 
             # Merge the two branches together
-            for field in binfo.keys():
+            for field in list(binfo.keys()):
                 if field.find('.') != -1:
                     continue
                 elif field in info:
@@ -855,8 +855,8 @@ class metaArray(object):
             region = self.overlap(b)
 
             if self.debug:
-                print("*** Overlap region: " + str(region))
-                print(self[region])
+                print(("*** Overlap region: " + str(region)))
+                print((self[region]))
 
             # Perform the operation on the common region
             newArray = self[region]
@@ -909,12 +909,12 @@ class metaArray(object):
             info_unit = info['unit']
 
             # Remove grand parent info in
-            for field in info.keys():
+            for field in list(info.keys()):
                 if field.find('.') != -1:
                     del info[field]
 
             # Merge the two branches together
-            for field in binfo.keys():
+            for field in list(binfo.keys()):
                 if field.find('.') != -1:
                     continue
                 elif field in info:
@@ -1080,7 +1080,7 @@ class metaArray(object):
         if key is tuple, convert xyz indexes to ijk space first, then return self.data[ikey] with corresponding meta info
         """
         if self.debug:
-            print("*** setitem", key, value)
+            print(("*** setitem", key, value))
 
         if isinstance(key, str):                # Only have to set the meta info value
             self.info[key] = value
@@ -1108,7 +1108,7 @@ class metaArray(object):
         Do not support stepping
         """
         if self.debug:
-            print("*** setslice", begin, end, value)
+            print(("*** setslice", begin, end, value))
 
         key_pair = self._key_pair
         proc_key = self.__proc_key
@@ -1194,7 +1194,7 @@ class metaArray(object):
         """
         info = self.copy_info()
 
-        for field in info.keys():
+        for field in list(info.keys()):
             if field.find('.') != -1:
                 del info[field]
 
@@ -1221,7 +1221,7 @@ class metaArray(object):
             raise ValueError("Indexes must be int or float, " + str(key) + " given.")
 
         if self.debug:
-            print("*** _key_pair(" + str(key) + ") => ikey: " + str(ikey) + ", xkey:" + str(xkey))
+            print(("*** _key_pair(" + str(key) + ") => ikey: " + str(ikey) + ", xkey:" + str(xkey)))
 
         return ikey, xkey
 
@@ -1263,8 +1263,7 @@ class metaArray(object):
                 # Log scale applied, use default base
                 lst.append(logFunc(x0[i], 0, x1[i], shape[i]))
             else:
-                raise(ValueError, "Log scale descriptor can only be int,\
-                    float, True, False or None, given: " + str(lg[i]))
+                raise ValueError
         return lst
 
     def gen_i2x(self):
@@ -1278,7 +1277,7 @@ class metaArray(object):
         # i0 = 0
         # i1 = len(self.data[i])
         if self.debug:
-            print("*** starting xyz:", x0, "ending xyz:", x1, "shape:", shape, "ndim:", self.ndim)
+            print(("*** starting xyz:", x0, "ending xyz:", x1, "shape:", shape, "ndim:", self.ndim))
         lst = []
         for i in range(self.ndim):
             if lg[i] is None or lg[i] == False:

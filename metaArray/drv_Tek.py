@@ -430,9 +430,9 @@ class isf(object):
             elif 'WFID' in hdr_dict:
                 WFI = hdr_dict['WFID']
             else:
-                for key in hdr_dict.keys():
+                for key, val in hdr_dict.items():
                     if key.find(':WFI') != -1:
-                        WFI = hdr_dict[key]
+                        WFI = val
                         break
 
             desc += "\t" + str(i)
@@ -453,7 +453,7 @@ class isf(object):
                 desc += index_str + "Data length: " + str(data_len) + linesep
                 desc += index_str + "Unpack string: " + unpack_str + linesep
 
-                for key, val in hdr_dict.iteritems():
+                for key, val in hdr_dict.items():
                     desc += index_str + '[' + key + '] ' + str(val) + linesep
 
                 desc += linesep
@@ -491,7 +491,7 @@ class isf(object):
                 ENC = None
 
             if ENC != 'BIN' and ENC != 'BINARY':
-                print('ENC/ENCDG value is expected to be "BIN" or "BINARY", got "' + ENC + '" instead.')
+                print(('ENC/ENCDG value is expected to be "BIN" or "BINARY", got "' + ENC + '" instead.'))
 
         # Check byte order / endianness
         if 'BYT_O' in hdr_dict:
@@ -667,7 +667,7 @@ class isf(object):
         elif 'WFID' in hdr_dict:
             WFI = hdr_dict['WFID']
         else:
-            for key in hdr_dict.keys():
+            for key, val in hdr_dict.items():
                 if key.find(':WFI') != -1:
                     WFI = hdr_dict[key]
                     break
@@ -767,14 +767,14 @@ class TDS2000_csv(csv_file):
 
             model = self.getrow(15)[:2]
             if (model[0] != 'Model Number') or (model[1][:4] != 'TDS2'):
-                print("\t*** Warning, row 15 of the file does not match the \
+                print(("\t*** Warning, row 15 of the file does not match the \
                         expected model number description." + linesep + \
                         "\tExpecting 'Model':'DPO2', got '" + \
-                        model[0] + "':'" + model[1][:4] + "' instead.")
+                        model[0] + "':'" + model[1][:4] + "' instead."))
 
         # Create the metainfo
         metainfo = {}
-        info_pair = zip(self.getcolumn(0), self.getcolumn(1))
+        info_pair = list(zip(self.getcolumn(0), self.getcolumn(1)))
 
         info_pair.sort(key=itemgetter(0))
         for field, value in groupby(info_pair, key=itemgetter(0)):
@@ -822,9 +822,9 @@ class TDS2000_csv(csv_file):
 
         if debug:
             if self.metainfo['Record Length'] != self.rows:
-                print("\t*** Warning, Record Length description (" + str(self.metainfo['Record Length']) \
+                print(("\t*** Warning, Record Length description (" + str(self.metainfo['Record Length']) \
                         + ") do not match the number of rows counted (" + str(self.rows) \
-                        + ") in this file. This file maybe corrupted")
+                        + ") in this file. This file maybe corrupted"))
 
         return
 
@@ -853,7 +853,7 @@ class TDS2000_csv(csv_file):
         ary['range']['label'][0] = metainfo['Source']
 
         # Include the rest of the metainfo into metaArray
-        for field, value in metainfo.iteritems():
+        for field, value in metainfo.items():
             ary["TDS2.csv."+field] = value
 
         ary.update_range()
@@ -936,14 +936,14 @@ class DPO2000_csv(csv_file):
 
             model = self.getrow(0)[:2]
             if (model[0] != 'Model') or (model[1][:4] != 'DPO2'):
-                print("\t*** Warning, row 0 of the file does not match the \
+                print(("\t*** Warning, row 0 of the file does not match the \
                         expected model number description." + linesep + \
                         "\tExpecting 'Model':'DPO2', got '" + \
-                        model[0] + "':'" + model[1][:4] + "' instead.")
+                        model[0] + "':'" + model[1][:4] + "' instead."))
 
             if self.data_start != 15:
-                print("\t*** Warning, Data stream is thought to start at row index" + \
-                        str(self.data_start) + ", instead of the expected 15.")
+                print(("\t*** Warning, Data stream is thought to start at row index" + \
+                        str(self.data_start) + ", instead of the expected 15."))
 
         # File headers should be understood by drv_csv already
         metainfo = self.metainfo
@@ -979,9 +979,9 @@ class DPO2000_csv(csv_file):
 
         if debug:
             if metainfo['Record Length'] != self.rows - self.data_start:
-                print("\t*** Warning, Record Length description (" + str(metainfo['Record Length']) \
+                print(("\t*** Warning, Record Length description (" + str(metainfo['Record Length']) \
                         + ") do not match the number of rows counted (" + str(self.rows - self.data_start) \
-                        + ") in this file. This file maybe corrupted")
+                        + ") in this file. This file maybe corrupted"))
 
         self.metainfo = metainfo
         return
@@ -1021,7 +1021,7 @@ class DPO2000_csv(csv_file):
         ary['range']['label'][0] = index_name
 
         # Include the rest of the metainfo into metaArray
-        for field, value in metainfo.iteritems():
+        for field, value in metainfo.items():
             ary["DPO2.csv."+field] = value
 
         ary.update_range()

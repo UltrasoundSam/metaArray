@@ -412,7 +412,7 @@ class csv_file(object):
             # Assume the Odd index items are labels, and Even index items are values
             if len(lst)%2 == 0:
                 # [('lbl0', 'val0'), ('lbl1', 'val1'), ...]
-                info_pair += zip(lst[0::2], lst[1::2])
+                info_pair += list(zip(lst[0::2], lst[1::2]))
 
 
         info_pair.sort(key=itemgetter(0))
@@ -459,7 +459,7 @@ class csv_file(object):
         """
         metainfo = self.metainfo
         for field in keys:
-            if metainfo.has_key(field):
+            if field in metainfo:
                 metainfo[field] = func(metainfo[field])
 
         self.metainfo = metainfo
@@ -514,13 +514,13 @@ def to_csv(metAry, path, debug=False, \
     LS = linesep
 
     if not path.write:
-        print("Given file path is not writable." + path.full)
+        print(("Given file path is not writable." + path.full))
         raise IOError
 
     info = metAry.copy_info()
     data = metAry.data
 
-    nfo_keys = info.keys()
+    nfo_keys = list(info.keys())
     nfo_keys.sort()
 
     with open(path.full, 'wb') as f:
@@ -530,7 +530,7 @@ def to_csv(metAry, path, debug=False, \
 
             val = info.pop(key)
 
-            if isinstance(val, (int, long, float, complex)):
+            if isinstance(val, (int, float, complex)):
                 val = str(val)
             else:
                 val = TD + str(val) + TD
@@ -541,7 +541,7 @@ def to_csv(metAry, path, debug=False, \
         if data.ndim == 1:
             # One dimentional data, write out the index - value pairs
 
-            content = zip(metAry.get_axis(), data)
+            content = list(zip(metAry.get_axis(), data))
 
             for idx, val in content:
                 f.write(str(idx) + FD + str(val) + LS)

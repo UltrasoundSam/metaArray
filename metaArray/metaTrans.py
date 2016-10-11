@@ -144,14 +144,14 @@ def stfft(metAry, tres=100, fres=None, window='blackmanharris', \
     if debug:
         src_len = len(metAry.data[:l]*win)
         rfft_len = len(np.fft.rfft(metAry.data[:l]*win, n=n))
-        print("*** l: " + str(l))
-        print("*** lfres: " + str(lfres))
-        print("*** Nyquist: " + str(Nyquist))
-        print("*** n: " + str(n))
-        print("*** fmax: " + str(fmax))
-        print("*** fres: " + str(fres))
-        print("*** src_len: " + str(src_len))
-        print("*** rfft_len: " + str(rfft_len))
+        print(("*** l: " + str(l)))
+        print(("*** lfres: " + str(lfres)))
+        print(("*** Nyquist: " + str(Nyquist)))
+        print(("*** n: " + str(n)))
+        print(("*** fmax: " + str(fmax)))
+        print(("*** fres: " + str(fres)))
+        print(("*** src_len: " + str(src_len)))
+        print(("*** rfft_len: " + str(rfft_len)))
 
 
     if mag:
@@ -299,7 +299,7 @@ def cwt(x, wavelet, scale0, scale1, res, scale=10, tres=None, debug=False):
     # return scl_lst, page
 
     if debug:
-        print("There are a total number of " + str(len(scl_lst)) + " scales to be processed:")
+        print(("There are a total number of " + str(len(scl_lst)) + " scales to be processed:"))
 
     for i in range(len(scl_lst)):
 
@@ -311,7 +311,7 @@ def cwt(x, wavelet, scale0, scale1, res, scale=10, tres=None, debug=False):
         if len(d_wavelet) > d_len:
             # It probably shouldnt happen, because the daughter wavelet is longer than
             # the signal itself now
-            print("\t line number: " + str(i) + "\t scale: " + str(scl_lst[i]) + "\t data length: " + str(len(x.data)) + "\t wavelet length: " + str(len(d_wavelet)))
+            print(("\t line number: " + str(i) + "\t scale: " + str(scl_lst[i]) + "\t data length: " + str(len(x.data)) + "\t wavelet length: " + str(len(d_wavelet))))
             raise ValueError("Warning - Daughter wavelet is longer than itself!!")
         else:
             line = sp.signal.convolve(data, d_wavelet, mode='same')
@@ -323,7 +323,7 @@ def cwt(x, wavelet, scale0, scale1, res, scale=10, tres=None, debug=False):
             line = resample(resmp_time, line, resmp_rate)[1]
 
             if debug:
-                print("\t line number: " + str(i) + "\t scale: " + str(scl_lst[i]))
+                print(("\t line number: " + str(i) + "\t scale: " + str(scl_lst[i])))
 
         page.data[:len(line), i] = line
 

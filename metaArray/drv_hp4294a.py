@@ -336,10 +336,10 @@ class hp4294a:
                 sock = socket.create_connection((self.host, self.port))     # Connect
                 sock.setblocking(0)                                         # Non-blocking socket
                 sock.sendall(msg)                                           # Send msg
-                if debug: print('(-> Socket established to instrument, command sent: ' + str(repr(msg)))
+                if debug: print(('(-> Socket established to instrument, command sent: ' + str(repr(msg))))
                 break
-            except socket.error, err_msg:                                   # Failed to connect
-                print('Unable to complete sending of commands to the instrument. Error message : ' + err_msg[1])
+            except socket.error as err_msg:                                   # Failed to connect
+                print(('Unable to complete sending of commands to the instrument. Error message : ' + err_msg[1]))
                 if retry == 0:              # Ran out of retry attempts
                     try:
                         sock.close()
@@ -349,7 +349,7 @@ class hp4294a:
                     finally:
                         raise RuntimeError("socket connection broken")
                 else:
-                    print(str(retry) + ' retry attempts remaining. Wait 2 seconds before retry.')
+                    print((str(retry) + ' retry attempts remaining. Wait 2 seconds before retry.'))
                     time.sleep(2)           # Sleep for 2 seconds before trying again
 
         ################################################################
@@ -405,7 +405,7 @@ class hp4294a:
         data = ''                   # Init received byte stream holder
         while True:
             if is_bin_data:                             # looking for binaray data, count bytes
-                if debug: print('### Byte counting, received [' + str(d_len) + ':' + str(exp_len) + '].')
+                if debug: print(('### Byte counting, received [' + str(d_len) + ':' + str(exp_len) + '].'))
                 if d_len >= exp_len:
                     #print('### Received sufficient amount of data')
                     break
@@ -442,7 +442,7 @@ class hp4294a:
 
                             is_bin_data = True          #3 Message header seem complete
                             exp_len += 9                #3 '#6xxxxxx' + singal-data length + '\n'
-                            if debug: print('### Receiver excpecting ' + str(exp_len) + ' bytes.')
+                            if debug: print(('### Receiver excpecting ' + str(exp_len) + ' bytes.'))
                     else:
                         if data[-1] == '\n':                #2 Found '\n'
                             if debug: print('### Found ASCII termination char \\n')
@@ -465,7 +465,7 @@ class hp4294a:
                     break
 
         msg = ''.join(chunks)
-        if debug: print('Received a total of ' + str(len(msg)) + 'bytes.')
+        if debug: print(('Received a total of ' + str(len(msg)) + 'bytes.'))
         return msg
 
     def PRES(self):
@@ -511,7 +511,7 @@ class hp4294a:
         #       |IMLS|IMCS|IMLP|IMCP|IMRS|IMQ|IMD|LPR|CPR}
         """
 
-        if self.meas_dict.has_key(measurement):
+        if measurement in self.meas_dict:
             return 'MEAS ' + measurement
         else:
             raise ValueError(str(repr(measurement)) + " is not a recognised measurement type.")
@@ -900,8 +900,8 @@ class hp4294a:
                 ary = array(data.strip().split(',')).astype(float)  # Assume ASCII data
             except Exception as detail:
                 print('Caught error trying to parse received data as ASCII mode.')
-                print(str(type(detail)) + ': ' + str(detail.args))
-                print('Expecting ' + str(data_points) + 'data points.')
+                print((str(type(detail)) + ': ' + str(detail.args)))
+                print(('Expecting ' + str(data_points) + 'data points.'))
                 print('Received byte stream as follows: ')
                 raise ValueError(str(data))
 
@@ -1288,7 +1288,7 @@ class hp4294a:
             f_ary = self.get_sweep_values()
 
             if (f_ary == 0).any():          # Just in case it is not yet ready
-                if self.debug: print('*** Found zeros in frequency sweep values. ' + str(retry) + ' retry attrmpts remaining.')
+                if self.debug: print(('*** Found zeros in frequency sweep values. ' + str(retry) + ' retry attrmpts remaining.'))
             else:
                 break
 
@@ -1396,7 +1396,7 @@ class hp4294a:
         eta = self.eta()
 
         if eta > (3 * self.timeout):
-            print('Expecting to wait approximately ' + str(eta) + ' seconds to acquire the signal.')
+            print(('Expecting to wait approximately ' + str(eta) + ' seconds to acquire the signal.'))
 
         timeout = max(eta*1.25, self.timeout)
 

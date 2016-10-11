@@ -20,13 +20,9 @@ from os.path import join
 from os import linesep
 
 from textwrap import TextWrapper
+import io
 
 from metaArray.misc import filePath
-
-try:
-    import cStringIO
-except ImportError:
-    import io as cStringIO
 
 # Enviromental variables
 demo_dir = join(filePath(__file__).baseDir, 'example')
@@ -84,32 +80,32 @@ class demo_menu(object):
         else:
             title = self.title
 
-        print(title.center(tty_width))
+        print((title.center(tty_width)))
         print(partition)
-        print(wrapper.fill(self.info))
+        print((wrapper.fill(self.info)))
         print(partition)
 
-        lst = self.items.keys()
+        lst = list(self.items.keys())
         lst.sort()
 
         print('\tOption\tDescription')
         for i in range(len(lst)):
-            print('\t' + str(i).rjust(6) + '\t' + self.items[lst[i]].title)
+            print(('\t' + str(i).rjust(6) + '\t' + self.items[lst[i]].title))
 
         # Present the return option if parent menu exists
         i += 1
         return_option = i
         if self.parent is not None:
-            print('\t' + str(i).rjust(6) + '\tReturn to: ' + self.parent.title)
+            print(('\t' + str(i).rjust(6) + '\tReturn to: ' + self.parent.title))
             i += 1
 
-        print('\t' + str(i).rjust(6) + '\tQuit')
+        print(('\t' + str(i).rjust(6) + '\tQuit'))
         quit_option = i
 
         print(partition)
 
         while True:
-            option = raw_input("Which option would you like to select? ")
+            option = input("Which option would you like to select? ")
             try:
                 option = int(option)
             except:
@@ -119,17 +115,17 @@ class demo_menu(object):
                 return
 
             if option == return_option:
-                print(partition + linesep + linesep)
+                print((partition + linesep + linesep))
                 return self.parent()
 
             if option >= 0 and option < len(lst):
                 item = self.items[lst[option]]
 
                 if isinstance(item, demo_item):
-                    print(linesep + linesep + partition)
-                    print(wrapper.fill(item.info))
+                    print((linesep + linesep + partition))
+                    print((wrapper.fill(item.info)))
 
-                print(partition + linesep + linesep)
+                print((partition + linesep + linesep))
                 return item()
 
             continue
@@ -159,15 +155,15 @@ class demo_item(object):
         summary = self.exe()
 
         if summary is not None:
-            print(linesep + ' demo summary '.center(tty_width, '-') + linesep)
+            print((linesep + ' demo summary '.center(tty_width, '-') + linesep))
             print(summary)
         else:
-            print(linesep + linesep)
+            print((linesep + linesep))
 
-        print(' END of demo '.center(tty_width, '-') + linesep)
+        print((' END of demo '.center(tty_width, '-') + linesep))
 
         if self.parent is not None:
-            print(linesep + linesep)
+            print((linesep + linesep))
             return self.parent()
 
         return
@@ -199,7 +195,7 @@ class demo_item(object):
 def prcs_demo(code, summary=''):
 
     # Fill the code block into IO buffer
-    str_buff = cStringIO.StringIO()
+    str_buff = io.StringIO()
     str_buff.write(code.strip())
 
     str_buff.seek(0)
@@ -210,9 +206,9 @@ def prcs_demo(code, summary=''):
         if st == '':
             print(linesep)
         elif st[0] == '#':
-            print(comment_wrapper.fill(st))
+            print((comment_wrapper.fill(st)))
         else:
-            print(prompt + st)
+            print((prompt + st))
             exec(st)
             #try: exec(st)
             #except: return

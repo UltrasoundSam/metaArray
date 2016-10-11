@@ -165,7 +165,7 @@ class Ritec4000(object):
 
         result = False
         # Attempt to send parameter change self.Retries times
-        for _ in xrange(self.retries):
+        for _ in range(self.retries):
             try:
                 self.serial_port.write(cmd + '\r')
                 result = True
@@ -193,7 +193,7 @@ class Ritec4000(object):
         self.overvolt = self.overvolt_check()
 
         # Will attempt to get parameter self.Retries times
-        for _ in xrange(self.retries):
+        for _ in range(self.retries):
             try:
                 self.serial_port.write(cmd + '\r')
                 time.sleep(0.5)

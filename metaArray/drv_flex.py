@@ -121,7 +121,7 @@ class FlexFiles(object):
         self.hdr_idata = int_type
 
         if debug:
-            print(linesep, "Begin parsing the records according to file spec.")
+            print((linesep, "Begin parsing the records according to file spec."))
 
         # Begin parsing the redords
         parse = self.parse
@@ -138,15 +138,15 @@ class FlexFiles(object):
         hdr_nfo.append(header1)
 
         if header1[0] != hdr1[0][3]:
-            print('The first header record do not match description, ' + \
-            'this binary record do not appear to be a Flex file.')
+            print(('The first header record do not match description, ' + \
+            'this binary record do not appear to be a Flex file.'))
 
             raise ValueError('Header record 1, ' + hdr1[0][0] + 'should be: "' + hdr1[0][3] \
             + '", got "' + header1[0] + '" instead.')
 
         if header1[1] != hdr1[1][3]:
-            print('The first header record do not match description, ' + \
-            'this binary record do not appear to be a Flex file.')
+            print(('The first header record do not match description, ' + \
+            'this binary record do not appear to be a Flex file.'))
 
             raise ValueError('Header record 1, ' + hdr1[1][0] + 'should be: ' + str(hdr1[1][3]) \
             + ', got ' + str(header1[1]) + ' instead.')
@@ -166,8 +166,8 @@ class FlexFiles(object):
         hdr_nfo.append(header2)
 
         if header2[1] != hdr2[1][3]:
-            print('The first header record do not match description, ' + \
-            'this binary record do not appear to be a Flex pout hist file.')
+            print(('The first header record do not match description, ' + \
+            'this binary record do not appear to be a Flex pout hist file.'))
 
             raise ValueError('Header record 1, ' + hdr2[1][0] + \
             'should be: ' + hdr2[1][3] + ', got ' + header2[1] + ' instead.')
@@ -178,20 +178,20 @@ class FlexFiles(object):
 
         if debug:
             print('Debug info for header record 2: ')
-            print("This file is written at: " + self.date)
+            print(("This file is written at: " + self.date))
 
             self.code = header2[3].strip()
             self.user = header2[4].strip()
-            print("This file is created by " + self.user + \
-                  " using " + self.code)
+            print(("This file is created by " + self.user + \
+                  " using " + self.code))
 
             self.extra1 = header2[5].strip()
-            print('20-Character variable (unused): ' + str(header2[5]))
+            print(('20-Character variable (unused): ' + str(header2[5])))
 
             self.extra2 = header2[6].strip()
-            print('20-Character variable (unused): ' + str(header2[6]))
+            print(('20-Character variable (unused): ' + str(header2[6])))
 
-            print("=== End of current record debug info ===", linesep)
+            print(("=== End of current record debug info ===", linesep))
 
         # Parse the third header
         hdr3 = []
@@ -207,9 +207,9 @@ class FlexFiles(object):
 
         if debug:
             print('Debug info for header record 3: ')
-            print("The title for this simulation is: ", self.title)
-            print("The tag for this simulation is: ", self.tag)
-            print("=== End of current record debug info ===", linesep)
+            print(("The title for this simulation is: ", self.title))
+            print(("The tag for this simulation is: ", self.tag))
+            print(("=== End of current record debug info ===", linesep))
 
 
         # print "Just before hdr4, int_type:", int_type
@@ -238,34 +238,34 @@ class FlexFiles(object):
         if debug:
             print('Debug info for header record 4: ')
             self.file_version = header4[0]
-            print("File version is: ", self.file_version)
+            print(("File version is: ", self.file_version))
 
             self.model_partitions = header4[1]
-            print("This model has " + str(header4[1]) + ' partition(s).')
+            print(("This model has " + str(header4[1]) + ' partition(s).'))
 
             self.file_partitions = header4[2]
-            print("This file has " + str(header4[2]) + ' partiton(s).')
+            print(("This file has " + str(header4[2]) + ' partiton(s).'))
 
-            print('Int variable is ' + str(header4[3]) + ' bytes long.')
+            print(('Int variable is ' + str(header4[3]) + ' bytes long.'))
 
-            print('Float variable is ' + str(header4[4]) + ' bytes long.')
+            print(('Float variable is ' + str(header4[4]) + ' bytes long.'))
 
             self.nch1 = header4[5]
-            print('String 1 variable has ' + str(header4[5]) + ' characters')
+            print(('String 1 variable has ' + str(header4[5]) + ' characters'))
 
             self.nch2 = header4[6]
-            print('String 2 variable has ' + str(header4[6]) + ' characters')
+            print(('String 2 variable has ' + str(header4[6]) + ' characters'))
 
             self.nch3 = header4[7]
-            print('String 3 variable has ' + str(header4[7]) + ' characters')
+            print(('String 3 variable has ' + str(header4[7]) + ' characters'))
 
             self.iextra1 = header4[8]
-            print('Unused extra integer 1: ' + str(header4[8]))
+            print(('Unused extra integer 1: ' + str(header4[8])))
 
             self.iextra2 = header4[9]
-            print('Unused extra integer 2: ' + str(header4[9]))
+            print(('Unused extra integer 2: ' + str(header4[9])))
 
-            print("=== End of current record debug info ===", linesep)
+            print(("=== End of current record debug info ===", linesep))
 
 
         # Try to work out the unpack string for int data of intbyt in length,
@@ -361,14 +361,14 @@ class FlexFiles(object):
         Print Header info about Flex File
         '''
         print('========================================================')
-        print('Header information of simulation file ' + self.fname)
+        print(('Header information of simulation file ' + self.fname))
         print('========================================================')
-        print('Simulation tag: ' + self.tag)
-        print('Simulation title: ' + self.title)
-        print('This flex file is generated at: ' + self.date)
-        print('By: ' + self.user)
-        print('This file has a file type version number of: ' + str(self.iversion))
-        print('There are a total of ' + str(self.nrcd) + ' data records.')
+        print(('Simulation tag: ' + self.tag))
+        print(('Simulation title: ' + self.title))
+        print(('This flex file is generated at: ' + self.date))
+        print(('By: ' + self.user))
+        print(('This file has a file type version number of: ' + str(self.iversion)))
+        print(('There are a total of ' + str(self.nrcd) + ' data records.'))
         print('========================================================')
         return
 
@@ -463,9 +463,9 @@ class FlexFiles(object):
             #        current_entry = unpack(unpack_str, record[current_index:next_index])[0]
 
             if debug >= 2:
-                print("Parsed: " + unpack_str + " - [" \
+                print(("Parsed: " + unpack_str + " - [" \
                 + str(current_index) + ':' + str(next_index) + "] - " \
-                + str(current_entry))
+                + str(current_entry)))
 
             current_index = next_index
             entries.append(current_entry)
@@ -522,8 +522,8 @@ class data_out1(FlexFiles):
 
         # Check if this agree with the spec
         if header2[0].strip() != 'dat1':
-            print('The first header record do not match description, ' + \
-            'this binary record do not appear to be a Flex data out1 file.')
+            print(('The first header record do not match description, ' + \
+            'this binary record do not appear to be a Flex data out1 file.'))
 
             raise ValueError('Header record 1, ' + hdr2[0][0] + \
             'should be: "dat1", got "' + header2[0] + '" instead.')
@@ -594,13 +594,13 @@ class data_out1(FlexFiles):
 
         # Check the sanity of the requested data number
         if key > max_entry_idx:
-            print('Requested DATA OUT1 record number (' + str(key) + \
+            print(('Requested DATA OUT1 record number (' + str(key) + \
             ') does not exist, maximum availabe record number is: ' + \
-            str(max_entry_idx))
+            str(max_entry_idx)))
             raise ValueError
         elif key < 0:
-            print('Requested DATA OUT1 record number (' + str(key - max_entry_idx) + \
-            ') does not exist.')
+            print(('Requested DATA OUT1 record number (' + str(key - max_entry_idx) + \
+            ') does not exist.'))
             raise ValueError
 
         # Create entry (A record) index
@@ -819,14 +819,14 @@ class data_out1(FlexFiles):
                         ])
 
             if debug:
-                print("Index: " + str(entry_number) + "\t" + \
+                print(("Index: " + str(entry_number) + "\t" + \
                     "Name: " + desc['name'] + "\t" + \
                     "ntmstp: " + str(desc['ntmstp']) + "\t" + \
                     "time: " + str(desc['time']) + "\t" + \
                     "B_pos: " + str(B_pos) + "\t" + \
                     "B_parts: " + str(B_parts) + linesep + \
                     "\t From: " + str([ibegin, jbegin, kbegin]) + "\t to " + \
-                    str([iend, jend, kend]))
+                    str([iend, jend, kend])))
 
                 entry_number += 1
 
@@ -1032,8 +1032,8 @@ class pout_hist(FlexFiles):
 
         # Check if this agree with the spec
         if header2[0].strip() != 'hist':
-            print('The first header record do not match description, ' + \
-            'this binary record do not appear to be a Flex data out1 file.')
+            print(('The first header record do not match description, ' + \
+            'this binary record do not appear to be a Flex data out1 file.'))
 
             raise ValueError('Header record 1, ' + hdr2[0][0] + \
             'should be: "dat1", got "' + header2[0] + '" instead.')
@@ -1054,13 +1054,13 @@ class pout_hist(FlexFiles):
         int_byte = len(records[4]) / 12
 
         if int_byte != calcsize(idata):
-            print('Warning! The length of Int variable (' + str(int_byte) + \
+            print(('Warning! The length of Int variable (' + str(int_byte) + \
             ') appear to be different from which indicated by the Header_record_4.intbyt (' + \
             str(calcsize(idata)) + '). This may be a result of using the double ' + \
-            'precision pzflex solver.' + linesep)
+            'precision pzflex solver.' + linesep))
 
             if debug:
-                print('Warning! Try to work out the correct data type used.' + linesep)
+                print(('Warning! Try to work out the correct data type used.' + linesep))
             idata = gettypecode(int_byte, 'int')
             fdata = gettypecode(int_byte, 'float')
 
@@ -1088,11 +1088,11 @@ class pout_hist(FlexFiles):
 
         # Check if this agree with the spec
         if base_desc['int12'] != base[0][3]:
-            print('The first entry of the base record do not match description, ' + \
-            'this binary record maybe corrupted.')
+            print(('The first entry of the base record do not match description, ' + \
+            'this binary record maybe corrupted.'))
 
-            print('Base record 1, ' + base[0][0] + 'should be: "' + base[0][3] \
-            + '", got "' + base_desc['int12'] + '" instead.')
+            print(('Base record 1, ' + base[0][0] + 'should be: "' + base[0][3] \
+            + '", got "' + base_desc['int12'] + '" instead.'))
 
 
         self.nrecd = base_desc['nrecd']
@@ -1116,21 +1116,21 @@ class pout_hist(FlexFiles):
 
         if debug:
             print('Debug info for the base record: ')
-            print('There are a total of ' + str(base_rcd[1]) + \
-            ' data records in this file, including the time record.')
-            print('There are ' + str(base_rcd[2]) + ' time values in the time record.')
-            print('The grid name field is ' + str(base_rcd[3]) + ' words long.')
-            print('The description field is ' + str(base_rcd[4]) + ' words long.')
-            print('The curve tag field is ' + str(base_rcd[5]) + ' words long.')
+            print(('There are a total of ' + str(base_rcd[1]) + \
+            ' data records in this file, including the time record.'))
+            print(('There are ' + str(base_rcd[2]) + ' time values in the time record.'))
+            print(('The grid name field is ' + str(base_rcd[3]) + ' words long.'))
+            print(('The description field is ' + str(base_rcd[4]) + ' words long.'))
+            print(('The curve tag field is ' + str(base_rcd[5]) + ' words long.'))
             if self.nshift:
                 print('There is a time shift for each record.')
             else:
                 print('There is no time shift for the records.')
-            print('The curve label field is ' + str(base_rcd[7]) + ' words long.')
-            print('There are ' + str(base_rcd[8]) + ' indicies for each record.')
-            print('There are ' + str(base_rcd[9]) + ' coordinates for each record.')
-            print('Each character words has ' + str(base_rcd[10]) + ' bytes.')
-            print("=== End of current record debug info ===", linesep)
+            print(('The curve label field is ' + str(base_rcd[7]) + ' words long.'))
+            print(('There are ' + str(base_rcd[8]) + ' indicies for each record.'))
+            print(('There are ' + str(base_rcd[9]) + ' coordinates for each record.'))
+            print(('Each character words has ' + str(base_rcd[10]) + ' bytes.'))
+            print(("=== End of current record debug info ===", linesep))
 
         # The following are skeleton descriptions, have to fill in the
         # blanks before being used to parse the actual data records.
@@ -1239,13 +1239,13 @@ class pout_hist(FlexFiles):
 
         # Check the sanity of the requested data number
         if key > nrecd:
-            print('Requested pout hist record number (' + str(key) + \
+            print(('Requested pout hist record number (' + str(key) + \
             ') does not exist, maximum availabe record number is: ' + \
-            str(nrecd))
+            str(nrecd)))
             raise ValueError
         elif key < 0:
-            print('Requested pout hist record number (' + str(key - nrecd) + \
-            ') does not exist.')
+            print(('Requested pout hist record number (' + str(key - nrecd) + \
+            ') does not exist.'))
             raise ValueError
 
         # Descriptions of this record
@@ -1288,7 +1288,7 @@ class pout_hist(FlexFiles):
         data['range']['label'][0] = 'time'
 
         # Include the rest of the metainfo into metaArray
-        for field, value in desc.iteritems():
+        for field, value in desc.items():
             data["POUT_hist."+field] = value
 
         data[self.fname + '.desc'] = self.title
