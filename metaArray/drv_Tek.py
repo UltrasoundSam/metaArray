@@ -563,11 +563,11 @@ class isf(object):
         Attempt to convert string values into numeric values according to
         descriptions in self.hdr_format
         """
-        hdr_str = hdr_str.decode('utf8')
+        hdr_str = str(hdr_str.decode('utf8'))
         header = hdr_str.strip().rstrip(';').split(';')
 
-        for i in range(len(header)):
-            pair = header[i].split(' ', 1)
+        for i, head in enumerate(header):
+            pair = head.split(' ', 1)
             pair[1] = pair[1].strip('"' + "'")
             header[i] = pair
 
@@ -885,8 +885,6 @@ class TDS2000_csv(csv_file):
         desc += csv_file.__repr__(self)
 
         return desc
-
-
 
 
 class DPO2000_csv(csv_file):
