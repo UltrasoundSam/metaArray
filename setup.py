@@ -13,15 +13,17 @@ def read(fname):
 
 
 setup(name='metaArray',
-	version='1.1.2',
-	description='meta-info container for numpy ndarray, with associate libraries.',
-	author='Charley (Yichao) Fan',
-	author_email='y.fan@warwick.ac.uk',
-	url='http://warwickultrasound.co.uk/',
-	packages=['metaArray'],
-	long_description="""
-	Wrapper for combining numpy ndarrays with meta information. Also has useful utilities;
-	for example, reading in data files from PZFlex, binary data from oscilloscopes, talking
-	to impedance analysers, etc.""",
-	install_requires = ['matplotlib', 'numpy', 'h5py', 'scipy', 'pyserial']
+    version='1.1.3',
+    description='meta-info container for numpy ndarray, with associate libraries.',
+    author='Charley (Yichao) Fan',
+    author_email='y.fan@warwick.ac.uk',
+    url='http://warwickultrasound.co.uk/',
+    packages=['metaArray'],
+    package_data={'metaArray': ['example/*']},
+    long_description="""
+    Wrapper for combining numpy ndarrays with meta information. Also has useful utilities;
+    for example, reading in data files from PZFlex, binary data from oscilloscopes, talking
+    to impedance analysers, etc.""",
+    install_requires = ['matplotlib', 'numpy', 'h5py', 'scipy', 'pyserial']
      )
+    
