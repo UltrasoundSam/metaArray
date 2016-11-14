@@ -637,7 +637,10 @@ def plot2d(metaAry, size=(10, 7.5), dpi=75, fontsize=15, cmap=None, \
 
     if cmap is None:
         #cmap = cm.spectral
-        cmap = cm.hot
+        try:
+            cmap = cm.viridis        
+        except AttributeError:
+            cmap = cm.hot
 
     if corient is not 'horizontal':
         corient = 'vertical'

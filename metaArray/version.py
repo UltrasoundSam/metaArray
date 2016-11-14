@@ -2,8 +2,8 @@
 metaArray version info
 '''
 short_version = '1.1'
-version = '1.1.3'
-full_version = '1.1.3 2016-10-18'
+version = '1.1.4'
+full_version = '1.1.4 2016-11-14'
 release = True
 
 if not release:
