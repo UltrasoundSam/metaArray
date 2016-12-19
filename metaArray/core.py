@@ -1363,6 +1363,11 @@ class metaArray(object):
         """
         return self.data.ptp(axis)
 
+    def sum(self, axis=None):
+        """
+        Returns the sum of the data values along the given axis
+        """
+        return self.data.sum(axis)
 
     def log10(self):
         """
