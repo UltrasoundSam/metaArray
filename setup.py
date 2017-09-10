@@ -13,10 +13,10 @@ def read(fname):
 
 
 setup(name='metaArray',
-    version='1.1.5',
+    version='1.1.6',
     description='meta-info container for numpy ndarray, with associate libraries.',
-    author='Charley (Yichao) Fan',
-    author_email='y.fan@warwick.ac.uk',
+    author='Sam Hill',
+    author_email='ultrasoundsam@gmail.com',
     url='http://warwickultrasound.co.uk/',
     packages=['metaArray'],
     package_data={'metaArray': ['example/*']},
@@ -26,4 +26,5 @@ setup(name='metaArray',
     to impedance analysers, etc.""",
     install_requires = ['matplotlib', 'numpy', 'h5py', 'scipy', 'pyserial']
      )
-    
+
+

@@ -52,7 +52,7 @@ or
 
 ----------------------
 
-Or finally, for Window users, can download window installer exe from [https://warwickultrasound.co.uk/~sam/]
+Or finally, for Window users, can download window installer exe from [https://dwarfpalace.org/~sam/metaArray/]
 
 
 # DESCRIPTION
