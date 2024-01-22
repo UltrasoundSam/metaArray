@@ -287,6 +287,20 @@ class metaArray:
 
         return desc
 
+    def __copy__(self) -> 'metaArray':
+        """All copies are deep copies"""
+        return self.copy()
+
+    def __deepcopy__(self) -> 'metaArray':
+        """All copies are deep copies"""
+        return self.copy()
+
+    def copy(self) -> 'metaArray':
+        """
+        Retrun a duplicate copy (deep copy) of self
+        """
+        return metaArray(self.data, info=self.copy_info(), copy=True)
+
     def copy_info(self) -> dict:
         """
         Return a duplicate copy of own info
