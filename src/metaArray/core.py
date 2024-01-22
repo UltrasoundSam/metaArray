@@ -10,6 +10,7 @@ defining the metaArray object.
 
 import numpy as np
 import numpy.typing as npt
+import typing
 
 from os import linesep
 from copy import deepcopy
@@ -286,7 +287,7 @@ class metaArray:
 
         return desc
 
-    def copy_info(self):
+    def copy_info(self) -> dict:
         """
         Return a duplicate copy of own info
 
@@ -297,3 +298,42 @@ class metaArray:
             print("*** Duplicating meta info")
 
         return deepcopy(self.info)
+
+    def update(self, info_dict: dict) -> None:
+        """
+        Imitate the dict.update() method
+
+        Will override existing values, use with care!
+        """
+
+        self.info.update(info_dict)
+
+    def set_range(self, axis: int, field: str,
+                  value: typing.Union[str, float]) -> None:
+        """
+        Method to set range meta info
+
+        Example: self.set_range(0, 'unit', 's')
+        """
+
+        nfo_range = self.info['range']
+
+        if nfo_range.has_key(field):
+            nfo_range[field][axis] = value
+        else:
+            raise ValueError(f"Requested field ({field}) name do not exist")
+
+        self.update_range()
+
+    def get_range(self, axis: int, field: str) -> typing.Union[str, float]:
+        """
+        Method to get range meta info
+
+        Example: self.set_range(0, 'unit')
+        """
+        nfo_range = self.info['range']
+
+        if nfo_range.has_key(field):
+            return nfo_range[field][axis]
+        else:
+            raise ValueError(f"Requested field ({field}) name do not exist")
