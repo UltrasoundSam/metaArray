@@ -371,3 +371,59 @@ class metaArray:
             return np.logspace(begin, end, n)
         else:
             return np.linspace(begin, end, n)
+
+    def min(self, axis: int = None) -> typing.Union[float, npt.NDArray]:
+        """
+        Min value of the data array
+        """
+        return self.data.min(axis)
+
+    def max(self, axis: int = None) -> typing.Union[float, npt.NDArray]:
+        """
+        Max value of the data array
+        """
+        return self.data.max(axis)
+
+    def argmin(self, axis: int = None) -> typing.Union[float, npt.NDArray]:
+        """
+        argMin value of the data array in x-y-z space
+        """
+        # return self._i2x(self.data.argmin(axis))
+        pass
+
+    def argmax(self, axis: int = None) -> typing.Union[float, npt.NDArray]:
+        """
+        argMax value of the data array in x-y-z space
+        """
+        # return self._i2x(self.data.argmax(axis))
+        pass
+
+    def ptp(self, axis: int = None) -> typing.Union[float, npt.NDArray]:
+        """
+        Peak to peak value of the data array
+        """
+        return self.data.ptp(axis)
+
+    def sum(self, axis: int = None) -> typing.Union[float, npt.NDArray]:
+        """
+        Returns the sum of the data values along the given axis
+        """
+        return self.data.sum(axis)
+
+    def log10(self) -> 'metaArray':
+        """
+        Take the log10 of values and returns new metaArray
+        """
+        self.data = np.log10(self.data)
+
+        try:
+            self['unit'] = "log10(" + self['unit'] + ')'
+        except TypeError:
+            self['unit'] = None
+
+        try:
+            self['label'] = "log10 of " + self['label']
+        except TypeError:
+            self['label'] = 'log10()'
+
+        return self
