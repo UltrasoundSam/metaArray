@@ -337,3 +337,23 @@ class metaArray:
             return nfo_range[field][axis]
         else:
             raise ValueError(f"Requested field ({field}) name do not exist")
+
+    def get_axis(self, axis: int = 0) -> npt.NDArray:
+        """
+        Return a 1D numpy ndarray representing the discretized real space
+        indexies of the given axis
+
+        Example: time = self.get_axis(0)
+        Returns, for instance, time axis
+        """
+
+        assert type(axis) is int, f"Axis is not an integer: {axis}"
+
+        begin = self.get_range(axis, 'begin')
+        end = self.get_range(axis, 'end')
+        n = self.data.shape[axis]
+
+        if self.get_range(axis, 'log'):
+            return np.logspace(begin, end, n)
+        else:
+            return np.linspace(begin, end, n)
