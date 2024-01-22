@@ -1,30 +1,11 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Mar  2 14:14:28 2020
+
+@author: samhill
+"""
 
 from setuptools import setup
-import os
 
-"""Utility function to read the README file.
-Used for the long_description.  It's nice, because now 1) we have a top level
-README file and 2) it's easier to type in the README file than to put a raw
-string in below ..."""
-
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
-
-
-setup(name='metaArray',
-    version='1.1.6',
-    description='meta-info container for numpy ndarray, with associate libraries.',
-    author='Sam Hill',
-    author_email='ultrasoundsam@gmail.com',
-    url='http://warwickultrasound.co.uk/',
-    packages=['metaArray'],
-    package_data={'metaArray': ['example/*']},
-    long_description="""
-    Wrapper for combining numpy ndarrays with meta information. Also has useful utilities;
-    for example, reading in data files from PZFlex, binary data from oscilloscopes, talking
-    to impedance analysers, etc.""",
-    install_requires = ['matplotlib', 'numpy', 'h5py', 'scipy', 'pyserial']
-     )
-
-
+if __name__ == "__main__":
+    setup()
