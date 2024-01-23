@@ -157,7 +157,8 @@ class metaArray:
                 print("*** meta_info was supplied")
 
             # Update values
-            for key in self_info.keys():
+            keys = list(self_info.keys())
+            for key in keys:
                 # Check if defining range (which is another dict)
                 if key != 'range':
                     # if not range, can simply try to update value
@@ -169,7 +170,7 @@ class metaArray:
                 else:
                     # Iterate over 'range' dict
                     for key2, val in info['range'].items():
-                        self_info[key2] = val
+                        self_info['range'][key2] = val
 
         # Assemble the metaArray
         self.data = self_data
@@ -225,8 +226,8 @@ class metaArray:
                 order = "Normal"
 
             range_desc += f"{order:8} \t "
-            range_desc += f"{range_nfo['unit'][i]: 8} \t "
-            range_desc += f"{range_nfo['label'][i]: 8} \t "
+            range_desc += f"{str(range_nfo['unit'][i]):8} \t "
+            range_desc += f"{str(range_nfo['label'][i]):8} \t "
             range_desc += linesep
 
         if not self.debug:
