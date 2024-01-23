@@ -51,11 +51,8 @@ def magic_square() -> npt.NDArray[np.float_]:
 
 
 @pytest.fixture
-def meta_square(magic_square) -> ma.metaArray:
-    '''Create a magic square for data to pass into metaArray
-
-    Creates a 2d array of with length 5 that each column/row sums
-    to the same value (65).
+def meta_info() -> dict:
+    '''Defines metainfo fixture
     '''
     # Define meta info
     metainfo = {'name': 'Magic Square',
@@ -72,12 +69,21 @@ def meta_square(magic_square) -> ma.metaArray:
              }
 
     metainfo['range'] = range
+    return metainfo
 
-    return ma.metaArray(magic_square, dtype=int, info=metainfo)
+
+@pytest.fixture
+def meta_square(magic_square, meta_info) -> ma.metaArray:
+    '''Create a magic square for data to pass into metaArray
+
+    Creates a 2d array of with length 5 that each column/row sums
+    to the same value (65).
+    '''
+    return ma.metaArray(magic_square, dtype=int, info=meta_info)
 
 
 @pytest.mark.parametrize("axis", [0, 1, None])
-def test_sum(meta_square: ma.metaArray, axis: int):
+def test_sum(meta_square: ma.metaArray, axis: int) -> None:
     '''Tests sum method'''
     sum = meta_square.sum(axis=axis)
 
@@ -90,3 +96,49 @@ def test_sum(meta_square: ma.metaArray, axis: int):
         assert sum == 65 * 5
 
 
+@pytest.mark.parametrize("axis", [0, 1, None])
+def test_max(meta_square: ma.metaArray, magic_square: npt.NDArray[np.int_],
+             axis: int) -> None:
+    '''Tests to see whether metaArray behaves the same as numpy'''
+    meta_max = meta_square.max(axis=axis)
+    np_max = magic_square.max(axis=axis)
+    assert np.array_equal(meta_max, np_max)
+
+
+@pytest.mark.parametrize("axis", [0, 1, None])
+def test_min(meta_square: ma.metaArray, magic_square: npt.NDArray[np.int_],
+             axis: int) -> None:
+    '''Tests to see whether metaArray behaves the same as numpy'''
+    meta_max = meta_square.min(axis=axis)
+    np_max = magic_square.min(axis=axis)
+    assert np.array_equal(meta_max, np_max)
+
+
+@pytest.mark.parametrize("axis", [0, 1, None])
+def test_ptp(meta_square: ma.metaArray, magic_square: npt.NDArray[np.int_],
+             axis: int) -> None:
+    '''Tests to see whether metaArray behaves the same as numpy'''
+    meta_max = meta_square.ptp(axis=axis)
+    np_max = magic_square.ptp(axis=axis)
+    assert np.array_equal(meta_max, np_max)
+
+
+def test_metainfo(meta_square: ma.metaArray, meta_info):
+    '''Tests to see whether the metainfo is passed without corruption.'''
+    # Get meta info from metaArray
+    metaInfo = meta_square.copy_info()
+
+    # Remove range from metainfo
+    range_info = meta_info.pop('range')
+
+    # Got through each key/val in meta_info and check to see whether it
+    # matches with metaInfo
+    main_comparision = all((val == metaInfo[key]
+                            for (key, val) in meta_info.items()))
+
+    # Test range comparision
+    range_comparison = all((val == metaInfo['range'][key]
+                            for (key, val) in range_info.items()))
+
+    comparison = (main_comparision, range_comparison)
+    assert all(comparison)
