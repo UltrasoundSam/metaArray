@@ -18,6 +18,10 @@ from copy import deepcopy
 from .misc import linearFunc, logFunc, expFunc
 
 
+# Alias for common type
+numeric = typing.Union[int, float, npt.NDArray, 'metaArray']
+
+
 class UnitError(ArithmeticError):
     """
     Unit error will be generated if trying to operate on metaArrays of
@@ -887,3 +891,332 @@ class metaArray:
             self['label'] = 'log10()'
 
         return self
+
+    def __basic_op(self, b: numeric,
+                   op: str) -> typing.Union[npt.NDArray, 'metaArray']:
+        """
+        Basic arithmetic operations
+        """
+        # Simple ops
+        if isinstance(b, (int, float, np.ndarray)):
+            ary = self.copy()
+            return self.__non_meta_op(ary, b, op)
+
+        # metaArray operations
+        elif isinstance(b, metaArray):
+            # work out the common xyz region
+            region = self.overlap(b)
+
+            if self.debug:
+                print("*** Overlap region: " + str(region))
+                print(self[region])
+
+            # Perform the operation on the common region
+            newArray = self[region].copy()
+            info = newArray.info
+            b_region = b[region]
+            binfo = b_region.copy_info()
+
+            # If the ijk shape do not agree, have to resample the
+            # data before arithmetic operation
+            if newArray.shape != b_region.shape:
+                # See if resampling is allowed
+                if newArray['resample']:
+                    msg = f"Unable to operate, non-identical array shapes {str(newArray.shape)} vs {str(b_region.shape)}, but auto-resampling not yet implemented"  # noqa E501
+                    raise NotImplementedError(msg)
+                else:
+                    msg = f"Unable to operate, non-identical array shapes {str(newArray.shape)} vs {str(b_region.shape)}, but auto-resampling not allowed"  # noqa E501
+                    raise ValueError(msg)
+
+            if op == '+':
+                try:
+                    newArray.unitChk(b_region)
+                    newArray.data += b_region.data
+                except UnitError:
+                    raise UnitError("Axis unit description do no match")
+
+            elif op == '-':
+                try:
+                    newArray.unitChk(b_region)
+                    newArray.data -= b_region.data
+                except UnitError:
+                    raise UnitError("Axis unit description do no match")
+
+            elif op == '*':
+                newArray.data *= b_region.data
+                try:
+                    info['unit'] = f"{info['unit']} * {b_region['unit']}"
+                except TypeError:
+                    info['unit'] = None
+
+            elif op == '/':
+                newArray.data /= b_region.data
+                try:
+                    info['unit'] = f"{info['unit']} / {b_region['unit']}"
+                except TypeError:
+                    info['unit'] = None
+
+            elif op == '//':
+                newArray.data = newArray.data.__floordiv__(b_region)
+                try:
+                    info['unit'] = f"{info['unit']} / {b_region['unit']}"
+                except TypeError:
+                    info['unit'] = None
+
+            elif op == 't/':
+                newArray.data = newArray.data.__truediv__(b_region)
+                try:
+                    info['unit'] = f"{info['unit']} / {b_region['unit']}"
+                except TypeError:
+                    info['unit'] = None
+
+            elif op == '^':
+                newArray.data = newArray.data ** b_region
+                try:
+                    info['unit'] = f"{info['unit']} ^ {b_region['unit']}"
+                except TypeError:
+                    info['unit'] = None
+            else:
+                raise ValueError("unknown operator" + str(op))
+
+            # Update the metainfo.
+            # metainfo that require processing before the generic merge process
+            if info['name'] is not None:
+                if b['name'] is not None:
+                    info_name = info['name'] + op + b['name']
+            elif b['name'] is not None:
+                info_name = b['name']
+
+            info_unit = info['unit']
+
+            # Remove grand parent info in
+            for field in info.keys():
+                if field.find('.') != -1:
+                    del info[field]
+
+            # Merge the two branches together
+            for field in binfo.keys():
+                if field.find('.') != -1:
+                    continue
+                elif info.has_key(field):
+                    if info[field] != binfo[field]:
+                        info[field] += '|' + op + '|' + binfo[field]
+                else:
+                    info[field] = binfo[field]
+
+            # Apply the metainfo that require processing before
+            # the generic merge process
+            info['name'] = info_name
+            info['unit'] = info_unit
+            return newArray
+
+        # Unknown type
+        else:
+            raise ValueError("Only numeric types can be operated on metaArray")
+
+    def __basic_iop(self, b: numeric,
+                    op: 'str') -> typing.Union[npt.NDArray, 'metaArray']:
+        """
+        Basic inplace arithmetic operations
+        """
+        # Simple ops
+        if isinstance(b, int) or isinstance(b, float) \
+           or isinstance(b, npt.NDArray):
+            ary = self
+            return self.__non_meta_op(ary, b, op)
+
+        # metaArray operations
+        elif isinstance(b, metaArray):
+            region = self.overlap(b)
+
+            if self.debug:
+                print("*** Overlap region: " + str(region))
+                print(self[region])
+
+            # Perform the operation on the common region
+            newArray = self[region]
+            info = newArray.info
+            b_region = b[region]
+            binfo = b_region.copy_info()
+
+            # Resampling to be implemented.
+            if len(newArray) != len(b_region):
+                msg = "Different Shapes, auto-resampling not yet implemented."
+                raise NotImplementedError(msg)
+
+            if op == '+':
+                try:
+                    newArray.unitChk(b_region)
+                    newArray.data += b_region.data
+                except UnitError:
+                    raise UnitError("Axis unit description do no match")
+
+            elif op == '-':
+                try:
+                    newArray.unitChk(b_region)
+                    newArray.data -= b_region.data
+                except UnitError:
+                    raise UnitError("Axis unit description do no match")
+
+            elif op == '*':
+                newArray.data *= b_region.data
+                info['unit'] = info['unit'] + '*' + b_region['unit']
+
+            elif op == '/':
+                newArray.data /= b_region.data
+                info['unit'] = info['unit'] + '/' + b_region['unit']
+
+            elif op == '//':
+                newArray.data = newArray.data.__floordiv__(b_region)
+                info['unit'] = info['unit'] + '/' + b_region['unit']
+
+            elif op == 't/':
+                newArray.data = newArray.data.__truediv__(b_region)
+                info['unit'] = info['unit'] + '/' + b_region['unit']
+
+            elif op == '^':
+                newArray.data = newArray.data ** b_region
+                info['unit'] = info['unit'] + '^' + b_region['unit']
+
+            else:
+                raise ValueError("unknown operator" + str(op))
+
+            # Update the metainfo.
+            # metainfo that require processing before the generic merge process
+            if info['name'] is not None:
+                if b['name'] is not None:
+                    info_name = info['name'] + op + b['name']
+            elif b['name'] is not None:
+                info_name = b['name']
+
+            info_unit = info['unit']
+
+            # Remove grand parent info in
+            for field in info.keys():
+                if field.find('.') != -1:
+                    del info[field]
+
+            # Merge the two branches together
+            for field in binfo.keys():
+                if field.find('.') != -1:
+                    continue
+                elif info.has_key(field):
+                    if info[field] != binfo[field]:
+                        info[field] += '|' + op + '|' + binfo[field]
+                else:
+                    info[field] = binfo[field]
+
+            # Apply the metainfo that require processing before
+            # the generic merge process
+            info['name'] = info_name
+            info['unit'] = info_unit
+            return newArray
+
+        # Unknown type
+        else:
+            raise ValueError("Only numeric types can be operated on metaArray")
+
+    def __non_meta_op(self, ary: 'metaArray',
+                      b: numeric,
+                      op: 'str') -> 'metaArray':
+        """
+        Simple arithmetic operations with non-metaArray data types
+        """
+        if op == '+':
+            ary.data += b
+        elif op == '-':
+            ary.data -= b
+        elif op == '*':
+            ary.data *= b
+        elif op == '/':
+            ary.data /= b
+        elif op == '//':
+            ary.data = ary.data.__floordiv__(b)
+        elif op == 't/':
+            ary.data = ary.data.__truediv__(b)
+        elif op == '^':
+            ary.data = ary.data ** b
+        else:
+            raise ValueError("Unknown operator" + str(op))
+
+        return ary
+
+    def __iadd__(self, b):
+        """
+        Inplace add
+        """
+        return
+
+    def __isub__(self, b):
+        return
+
+    def __imul__(self, b):
+        return
+
+    def __idiv__(self, b):
+        return
+
+    def __itruediv__(self, b):
+        return
+
+    def __ifloordiv__(self, b):
+        return
+
+    def __imod__(self, b):
+        return
+
+    def __ipow__(self, b):
+        return
+
+    def __add__(self, b: numeric) -> 'metaArray':
+        """
+        Return the sum of a and b, aligned in xyz space.
+        Only overlapping regions will be returned.
+        """
+        return self.__basic_op(b, '+')
+
+    def __sub__(self, b: numeric) -> 'metaArray':
+        """
+        Return the defference between self and b, aligned in xyz space.
+        Only overlapping regions will be returned.
+        """
+        return self.__basic_op(b, '-')
+
+    def __div__(self, b: numeric) -> 'metaArray':
+        """
+        Return the quotient between self and b, aligned in xyz space.
+        Only overlapping regions will be returned.
+        """
+        return self.__basic_op(b, '/')
+
+    def __floordiv__(self, b: numeric) -> 'metaArray':
+        return self.__basic_op(b, '//')
+
+    def __truediv__(self, b: numeric) -> 'metaArray':
+        return self.__basic_op(b, 't/')
+
+    def __mul__(self, b: numeric) -> 'metaArray':
+        """
+        Return the product self and b, aligned in xyz space.
+        Only overlapping regions will be returned.
+        """
+        return self.__basic_op(b, '*')
+
+    def __neg__(self) -> 'metaArray':
+        """
+        Return the copy of negated self.
+        """
+        negArray = self.__basic_op(-1, '*')
+
+        info = negArray.info
+        if info['name'] is not None:
+            info['name'] = "-" + info['name']
+
+        return negArray
+
+    def __pow__(self, b: numeric) -> 'metaArray':
+        """
+        Return self ** b, aligned in xyz space.
+        Only overlapping regions will be returned.
+        """
+        return self.__basic_op(-1, '^')
