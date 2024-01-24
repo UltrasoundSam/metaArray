@@ -345,6 +345,127 @@ class metaArray:
 
         return desc
 
+    def __contains__(self, b: 'metaArray') -> bool:
+        """
+        Retrun true if self xyz space contains the b xyz in entirety
+        """
+        if not ((isinstance(self, metaArray) and isinstance(b, metaArray))):
+            raise TypeError("Both operand must be metaArray objects")
+
+        ndim = self.ndim
+        if ndim != b.ndim:
+            msg = "Both operand must have the same number of dimensions"
+            raise DimError(msg)
+
+        abegin = self.info['range']['begin']
+        aend = self.info['range']['end']
+
+        bbegin = b.info['range']['begin']
+        bend = b.info['range']['end']
+
+        # Check common grounds per dimension
+        for i in range(ndim):
+            # Starting point must be less or equal to be true
+            if abegin[i] > bbegin[i]:
+                return False
+
+            # Ending point must be larger of equal to be true
+            if aend[i] < bend[i]:
+                return False
+
+        return True
+
+    def __delitem__(self,
+                    key: typing.Union[str, int, float, tuple[float]]) -> None:
+        raise ValueError("Cannot delete array elements")
+
+    def __delslice__(self, b: typing.Union[int, float],
+                     c: typing.Union[int, float]) -> None:
+        raise ValueError("Cannot delete array elements")
+
+    def __setitem__(self, key: typing.Union[int, float, str, tuple[float]],
+                    value: typing.Any) -> None:
+        """
+        Modified method
+
+        if key is int, return self.data[key] with corresponding meta info
+        if key is float, convert key to ijk space, return self.data[ikey]
+                         with corresponding meta info
+        if key is string, return self.info['key']
+        if key is tuple, convert xyz indexes to ijk space first, then return
+                         self.data[ikey] with corresponding meta info
+        """
+        if self.debug:
+            print("*** setitem", key, value)
+
+        # Only have to set the meta info value
+        if isinstance(key, str):
+            self.info[key] = value
+            # The is really for backward compatibility.
+            # Should use set_range method instead
+            if key == 'range':
+                self.update_range()
+            return
+
+        proc_key = self.__proc_key
+
+        # Could be a tuple of int, float or slice
+        if isinstance(key, tuple):
+            ijk_key = []
+            # Walk through each axis
+            for i in range(len(key)):
+                ijk_key.append(proc_key(key[i], axis=i)[0])
+
+            self.data[tuple(ijk_key)] = value        # Write to the array slice
+        else:                                        # must be int or float
+            self.data[proc_key(key)[0]] = value
+        return
+
+    def __setslice__(self, begin: tuple[int, float], end: tuple[int, float],
+                     value: typing.Any) -> None:
+        """
+        Modified slice method
+        Do not support stepping
+        """
+        if self.debug:
+            print("*** setslice", begin, end, value)
+
+        proc_key = self.__proc_key
+
+        ibegin = proc_key(begin)[0]
+        iend = proc_key(end)[0]
+
+        # Get the indexes right
+        if ibegin is None:
+            ibegin = 0
+        if iend is None:
+            iend = self.shape[0]
+
+        self.data[ibegin:iend] = value
+
+    def __getstate__(self) -> dict[str, typing.Any]:
+        odict = {}
+        # odict = self.__dict__.copy()
+        odict['info'] = self.copy_info()
+        odict['data'] = self.data
+        odict['dtype'] = self.dtype
+        odict['debug'] = self.debug
+        return odict
+
+    def __setstate__(self, dict: dict) -> None:
+        # fh = open(dict['file'])      # reopen file
+        # count = dict['lineno']       # read from file...
+        # while count:                 # until line count is restored
+        #     fh.readline()
+        #     count = count - 1
+        # self.__dict__.update(dict)   # update attributes
+        # self.fh = fh                 # save the file object
+
+        self.__init__(dict['data'], info=dict['info'],
+                      dtype=dict['dtype'], debug=dict['debug'])
+        # dtype=None, copy=False, debug=False
+        self.update_range()
+
     def __proc_key(self,
                    key: typing.Union[tuple[typing.Union[int, float]], slice],
                    axis: int = 0) -> typing.Union[tuple[slice, slice],
@@ -852,15 +973,13 @@ class metaArray:
         """
         argMin value of the data array in x-y-z space
         """
-        # return self._i2x(self.data.argmin(axis))
-        pass
+        return self._i2x(self.data.argmin(axis))
 
     def argmax(self, axis: int = None) -> typing.Union[float, npt.NDArray]:
         """
         argMax value of the data array in x-y-z space
         """
-        # return self._i2x(self.data.argmax(axis))
-        pass
+        return self._i2x(self.data.argmax(axis))
 
     def ptp(self, axis: int = None) -> typing.Union[float, npt.NDArray]:
         """
