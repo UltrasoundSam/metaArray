@@ -15,6 +15,8 @@ import typing
 from os import linesep
 from copy import deepcopy
 
+from .misc import linearFunc, logFunc, expFunc
+
 
 class UnitError(ArithmeticError):
     """
@@ -54,7 +56,53 @@ class range_info(dict):
     e.g. self.register[id(obj)] = obj.update_range
 
     """
-    pass
+    def __init__(self, values: dict = None) -> None:
+        dict.__init__(self)
+        if values is not None:
+            self.update(values)
+        self.register = {}
+
+    def __getitem__(self, key: str) -> typing.Any:
+        return dict.__getitem__(self, key)
+
+    def __setitem__(self, key: str, value: typing.Any) -> None:
+        dict.__setitem__(self, key, value)
+        register = self.register
+        for i in register:
+            try:
+                register[i]()
+            except KeyError:
+                print("Host object with id: " + str(i) +
+                      "can not be updated, removing from range_info register")
+                self.dereg(register[i])
+
+    def reg(self, obj: 'metaArray', method: typing.Callable = None) -> None:
+        """
+        Register host object, with an optional update method arguement.
+        Host.update_range() will be used to notify any changes unless otherwise
+        specified.
+        """
+        if method is None:
+            method = obj.update_range
+
+        self.register[id(obj)] = method
+
+    def dereg(self, obj: 'metaArray') -> None:
+        """
+        Deregister host object
+        """
+        dict.__delitem__(self, id(obj))
+        return
+
+    def __deepcopy__(self, memo) -> 'range_info':
+        """
+        Deep copy of self dictionary contents.
+
+        self.register will not be copied however.
+        """
+
+        # from copy import deepcopy
+        return range_info(deepcopy(dict.copy(self)))
 
 
 class metaArray:
@@ -184,6 +232,11 @@ class metaArray:
         self.itemsize = self_data.itemsize
         self.nbytes = self_data.nbytes
         self.size = self_data.size
+
+        # Register self with the range_info object and update
+        # conversion functions
+        self_info['range'].reg(self)
+        self.update_range()
 
     def __repr__(self) -> str:
         '''Test representation of object
@@ -320,8 +373,18 @@ class metaArray:
 
         Will override existing values, use with care!
         """
-
         self.info.update(info_dict)
+
+    def update_range(self) -> None:
+        """
+        Check if range info has been updated, update converstion ijk to xyz
+        space conversion functions accordingly if so.
+        """
+        if self.debug:
+            print("### Range info has changed, updating.")
+
+        self.i2x = self.gen_i2x()
+        self.x2i = self.gen_x2i()
 
     def set_range(self, axis: int, field: str,
                   value: typing.Union[str, float]) -> None:
@@ -372,6 +435,83 @@ class metaArray:
             return np.logspace(begin, end, n)
         else:
             return np.linspace(begin, end, n)
+
+    def get_smp_rate(self, axis: int = 0) -> float:
+        """
+        Return the sampling rate of the given axis
+
+        Example: self.get_smp_rate(0)
+        """
+
+        assert type(axis) is int, f"Axis is not an integer:{axis}"
+
+        x0 = self.get_range(axis, 'begin')
+        x1 = self.get_range(axis, 'end')
+        n = self.data.shape[axis]
+
+        return float(n) / abs(x1 - x0)
+
+    def gen_x2i(self) -> list[typing.Callable[..., float]]:
+        """
+        Regenerate the xyz to ijk space convertion functions
+        """
+        shape = self.shape = self.data.shape
+        x0 = self.info['range']['begin']
+        x1 = self.info['range']['end']
+        lg = self.info['range']['log']
+
+        lst = []
+        for i in range(self.ndim):
+            if not lg[i]:
+                # Log scale is not applied, everything is linear
+                if x0[i] == x1[i]:
+                    # Start stop at the same point
+                    lst.append(lambda x: 0.)
+                else:
+                    lst.append(linearFunc(x0[i], 0, x1[i], shape[i]))
+            elif isinstance(lg[i], int) or isinstance(lg[i], float):
+                # Log scale applied, given log base.
+                lst.append(logFunc(x0[i], 0, x1[i], shape[i], base=lg[i]))
+            elif lg[i]:
+                # Log scale applied, use default base
+                lst.append(logFunc(x0[i], 0, x1[i], shape[i]))
+            else:
+                raise ValueError(f"Log scale descriptor can only be int,\
+                                 float, True, False or None, given: {lg[i]}")
+        return lst
+
+    def gen_i2x(self) -> list[typing.Callable[..., float]]:
+        """
+        Regenerate the ijk to xyz space convertion functions
+        """
+        shape = self.shape = self.data.shape
+        x0 = self.info['range']['begin']
+        x1 = self.info['range']['end']
+        lg = self.info['range']['log']
+
+        if self.debug:
+            print("*** starting xyz:", x0, "ending xyz:", x1,
+                  "shape:", shape, "ndim:", self.ndim)
+
+        lst = []
+        for i in range(self.ndim):
+            if not lg[i]:
+                # Log scale is not applied, everything is linear
+                if shape[i] == 1:
+                    # Start stop at the same point
+                    lst.append(lambda x: x0[i])
+                else:
+                    lst.append(linearFunc(0, x0[i], shape[i], x1[i]))
+            elif isinstance(lg[i], (int, float)):
+                # Log scale applied, given log base.
+                lst.append(expFunc(x0[i], 0, x1[i], shape[i], base=lg[i]))
+            elif lg[i]:
+                # Log scale applied, use default base
+                lst.append(expFunc(x0[i], 0, x1[i], shape[i]))
+            else:
+                raise ValueError("Log scale descriptor can only be int,\
+                    float, True, False or None, given: " + str(lg[i]))
+        return lst
 
     def min(self, axis: int = None) -> typing.Union[float, npt.NDArray]:
         """
