@@ -211,14 +211,14 @@ class metaArray:
                 if key != 'range':
                     # if not range, can simply try to update value
                     try:
-                        self_info[key] = info[key]
+                        self_info[key] = deepcopy(info[key])
                     except KeyError:
                         # Value not defined, continuing
                         continue
                 else:
                     # Iterate over 'range' dict
                     for key2, val in info['range'].items():
-                        self_info['range'][key2] = val
+                        self_info['range'][key2] = deepcopy(val)
 
         # Assemble the metaArray
         self.data = self_data
@@ -341,6 +341,240 @@ class metaArray:
 
         return desc
 
+    def __proc_key(self,
+                   key: typing.Union[tuple[typing.Union[int, float]], slice],
+                   axis: int = 0) -> typing.Union[tuple[slice, slice],
+                                                  tuple[int, float]]:
+        """
+        Work out the ijk space key based on the given key data type.
+        The key could be a tuple of int, float or slice
+        """
+        if self.debug:
+            print("*** __proc_key:" + str(key))
+
+        key_pair = self._key_pair
+        if isinstance(key, slice):
+            start = key_pair(key.start, axis=axis)
+            stop = key_pair(key.stop, axis=axis)
+            step = key_pair(key.step, axis=axis)
+            slice_ijk = slice(start[0], stop[0], step[0])
+            slice_xyz = slice(start[1], stop[1], step[1])
+            return slice_ijk, slice_xyz
+        else:
+            keys = key_pair(key, axis=axis)
+            return keys[0], keys[1]
+
+    def _key_pair(self,
+                  key: typing.Union[int, float],
+                  axis: int = 0) -> tuple[int, float]:
+        """
+        Identify the given key space, return key pair in ijk and xyz space
+        """
+        x2i = self._x2i
+        i2x = self._i2x
+
+        if isinstance(key, float):
+            xkey = key
+            ikey = x2i(key, axis=axis)
+        elif isinstance(key, int):
+            xkey = i2x(key, axis=axis)
+            ikey = key
+        elif key is None:
+            ikey = None
+            xkey = None
+        else:
+            raise ValueError(f"Indexes must be int or float {str(key)} given.")
+
+        if self.debug:
+            print(f"*** _key_pair({str(key)}) => ikey: {str(ikey)}, xkey: {str(xkey)}")  # noqa: E501
+
+        return ikey, xkey
+
+    def __getitem__(self, key: typing.Union[str, int, float, tuple[float]]):
+        """
+        Modified method
+
+        if key is string, return self.info['key']
+        if key is int, return self.data[key] with corresponding meta info
+        if key is float, convert key to ijk space, return self.data[ikey]
+                         with corresponding meta info
+        if key is tuple, convert xyz indexes to ijk space first, then return
+                         self.data[ikey] with corresponding meta info
+        """
+        if self.debug:
+            print("*** getitem:", key)
+
+        # >>> a[1]
+        # __getitem__(1)
+        # >>> a[1,2]
+        # __getitem__((1, 2))
+        # >>> a[1:2]
+        # __getslice__(1, 2)
+        # >>> a[1:2:1]
+        # __getitem__(slice(1, 2, 1))
+        # >>> a[1,2::-1]
+        # __getitem__((1, slice(2, None, -1)))
+
+        # Only have to return the meta info value
+        if isinstance(key, str):
+            if str == 'info':
+                return self.info
+            else:
+                try:
+                    return self.info[key]
+                except KeyError:
+                    return None
+
+        elif isinstance(key, slice):
+            if (key.step != 1) and (key.step is not None):
+                raise NotImplementedError("Non unity slice stepping is not supported. Use resample() instead." + str(key))  # noqa: E501
+            return self.__getslice__(key.start, key.stop)
+
+        proc_key = self.__proc_key
+
+        # Init the new nfo dict
+        nfo = self.copy_info()
+        nfo_range = nfo['range']
+
+        # Could be a tuple of int, float and slice
+        if isinstance(key, tuple):
+            # Init a new key tuple for the ijk version of the key
+            ijk_key = []
+            # Expected shape of the array
+            ijk_shape = []
+
+            # Walk through each axis
+            for i, key_val in enumerate(key):
+                keys = proc_key(key_val, axis=i)
+                ikey = keys[0]
+                # This will be ijk index pass onto ndarray
+                ijk_key.append(ikey)
+
+                if self.debug:
+                    print("*** getitem ijk_key component:", ikey)
+
+                # Slice is given, update metainfo
+                if isinstance(ikey, slice):
+                    if ikey.start is None:
+                        istart = 0
+                    else:
+                        istart = ikey.start
+
+                    if ikey.stop is None:
+                        istop = self.shape[i]
+                    else:
+                        istop = ikey.stop
+
+                    ijk_shape.append(istop-istart)
+                    start = keys[1].start
+                    stop = keys[1].stop
+                    if start is not None:
+                        nfo_range['begin'][i] = start
+                    if stop is not None:
+                        nfo_range['end'][i] = stop
+
+                # Individual index is given, update meta info accordingly
+                else:
+                    ijk_shape.append(1)
+                    nfo_range['begin'][i] = keys[1]
+                    nfo_range['end'][i] = keys[1]
+
+            # Tidy up the empty dimensions
+            # Start with highest index, so deletion will not affect
+            # later index counts
+            for i in range(len(ijk_shape))[::-1]:
+                if ijk_shape[i] == 1:
+                    del ijk_shape[i]
+                    del nfo_range['begin'][i]
+                    del nfo_range['end'][i]
+                    del nfo_range['unit'][i]
+                    del nfo_range['label'][i]
+            try:
+                dat = self.data[tuple(ijk_key)]     # Obtain the array slice
+            except IndexError:
+                print("### ijk_key: " + str(ijk_key))
+                print("### ijk_shape: " + str(ijk_shape))
+                raise
+
+        elif isinstance(key, int) or isinstance(key, float):
+            # Selecting a element of the first axis.
+            nfo_range['begin'] = nfo_range['begin'][1:]
+            nfo_range['end'] = nfo_range['end'][1:]
+            del nfo_range['unit'][0]
+            dat = self.data[proc_key(key)[0]]
+        else:
+            typs = '<int|float|tuple|string>'
+            m = f"Expecting {typs} key data type, {str(type(key))} given."
+            raise IndexError(m)
+
+        # If only one element remaining, no need to return meta info.
+        if isinstance(dat, int) or isinstance(dat, float) \
+           or isinstance(dat, complex):
+            return dat
+        else:
+            return metaArray(dat, info=nfo)
+
+    def __getslice__(self, begin: typing.Union[int, float],
+                     end: typing.Union[int, float]) -> 'metaArray':
+        """
+        Modified slice method
+        Do not support stepping
+        """
+        if self.debug:
+            print("*** getslice: ", begin, end)
+
+        # Init the new nfo dict
+        nfo = self.copy_info()
+        nfo_range = nfo['range']
+
+        proc_key = self.__proc_key
+        new_shape = list(self.shape)
+
+        begin = proc_key(begin)
+        end = proc_key(end)
+        ibegin = begin[0]
+        iend = end[0]
+        xbegin = begin[1]
+        xend = end[1]
+
+        # Get the indexes right
+        if ibegin is None:
+            ibegin = 0
+        if iend is None:
+            iend = new_shape[0]
+        new_shape[0] = iend - ibegin    # Here is the new shape
+
+        # Update the meta info
+        if xbegin is not None:
+            nfo_range['begin'][0] = xbegin
+        if xend is not None:
+            nfo_range['end'][0] = xend
+
+        # Obtain the array slice
+        dat = self.data[ibegin:iend].reshape(new_shape)
+
+        return metaArray(dat, info=nfo)
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+    def __abs__(self) -> 'metaArray':
+        """
+        Return a absolute value copy of self
+        """
+        ary = metaArray(abs(self.data), info=self.copy_info())
+        try:
+            ary['name'] = 'abs(' + ary['name'] + ')'
+        except TypeError:
+            pass
+        return ary
+
+    def truth(self) -> bool:
+        """
+        Returns True value
+        """
+        return True
+
     def __copy__(self) -> 'metaArray':
         """All copies are deep copies"""
         return self.copy()
@@ -366,6 +600,19 @@ class metaArray:
             print("*** Duplicating meta info")
 
         return deepcopy(self.info)
+
+    def copy_root_info(self) -> dict:
+        """
+        Return a duplicate copy of own info, except for those
+        keys with a '.' char
+        """
+        info = self.copy_info()
+
+        for field in info.keys():
+            if field.find('.') != -1:
+                del info[field]
+
+        return info
 
     def update(self, info_dict: dict) -> None:
         """
@@ -480,6 +727,18 @@ class metaArray:
                                  float, True, False or None, given: {lg[i]}")
         return lst
 
+    def _x2i(self, key: float, axis: int = 0) -> int:
+        """
+        Convert xyz indexes to their ijk counter parts
+        """
+        return int(np.round(self.x2i[axis](key)))
+
+    def _i2x(self, key: int, axis: int = 0) -> float:
+        """
+        Convert ijk indexes to their xyz counter parts
+        """
+        return self.i2x[axis](key)
+
     def gen_i2x(self) -> list[typing.Callable[..., float]]:
         """
         Regenerate the ijk to xyz space convertion functions
@@ -512,6 +771,66 @@ class metaArray:
                 raise ValueError("Log scale descriptor can only be int,\
                     float, True, False or None, given: " + str(lg[i]))
         return lst
+
+    def overlap(self, b: 'metaArray') -> tuple[slice]:
+        """
+        Find the overlapping area/volum between two metaArrays (in xyz space)
+
+        The output boundaries are always in float, because this is the way
+        metaArray recognise it as xyz space.
+
+        The output boundaries can be direcly apply to __getitem__ or __slice__.
+        i.e.  a[a.overlap(b)] is valid.
+
+        """
+
+        if not ((isinstance(self, metaArray) and isinstance(b, metaArray))):
+            raise TypeError("Both operand must be metaArray objects")
+
+        ndim = self.ndim
+
+        if ndim != b.ndim:
+            msg = "Both operand must have the same number of dimensions"
+            raise DimError(msg)
+
+        abegin = self.info['range']['begin']
+        aend = self.info['range']['end']
+
+        bbegin = b.info['range']['begin']
+        bend = b.info['range']['end']
+
+        output = []
+
+        # Check common grounds per dimension
+        for i in range(ndim):
+            # take the highest starting point
+            begin = max(float(abegin[i]), float(bbegin[i]))
+
+            # take the lowest ending point
+            end = min(float(aend[i]), float(bend[i]))
+
+            # There must be at least some overlap in all dimensions
+            if begin > end:
+                raise NoOverlapError
+
+            output.append(slice(begin, end))
+
+        return tuple(output)
+
+    def unitChk(self, b: 'metaArray') -> bool:
+        """
+        Compare the unit descriptions between two metaArrays.
+        Return true if they match, raise UnitError otherwise.
+        """
+        if self['unit'] != b['unit']:
+            msg = f"{self['unit']} != {b['unit']}"
+            raise UnitError(msg)
+
+        if self['range']['unit'] != b['range']['unit']:
+            msg = f"{str(self['range']['unit'])} != {str(b['range']['unit'])}"
+            raise UnitError(msg)
+
+        return True
 
     def min(self, axis: int = None) -> typing.Union[float, npt.NDArray]:
         """
