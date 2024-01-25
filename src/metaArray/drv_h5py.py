@@ -1,60 +1,20 @@
-#  drv_h5py.py
-#
-#  Copyright 2015 Unknown <charley@utc2d>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#  MA 02110-1301, USA.
-#
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#  MA 02110-1301, USA.
-#
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 25 2024 11:29
 
-'''
+@author: samhill
+
 metaArray I/O to HDF5 files via the h5py module
-
- This is hardly the most storage efficient way of storing small metaArray,
- due to the structrual overhead, but it is an attractive option for data
- exchange.
-
-
- Package dependency:
-
-       h5py
-'''
-
+"""
+import numpy as np
+import typing
 import h5py
 
-from metaArray.core import metaArray
-from metaArray.misc import filePath
+from .core import metaArray
+from .misc import filePath
 
-import numpy as np
 
-def __dict_loop(dic, h5):
+def __dict_loop(dic: dict, h5: h5py.File) -> None:
     """
     Recursively store items in a dictionary object into given h5py object as
     h5py.Dataset.
@@ -67,11 +27,11 @@ def __dict_loop(dic, h5):
     dict_lst = []
 
     # First loop, store all the simple data, and build the dict_lst
-    for key in dic:
-        if isinstance(dic[key], dict):
+    for key, val in dic.items():
+        if isinstance(val, dict):
             dict_lst.append(key)
         else:
-            h5.create_dataset(key, data=dic[key])
+            h5.create_dataset(key, data=val)
 
     # Process the dic_lst
     for key in dict_lst:
@@ -81,10 +41,8 @@ def __dict_loop(dic, h5):
 
         __dict_loop(dic[key], grp)
 
-    return
 
-
-def to_h5(metAry, dest, debug=False):
+def to_h5(metAry: metaArray, dest: typing.Union[str, h5py.Group]) -> None:
     """
     Write the metAry into given file path in the HDF5 format
 
@@ -92,15 +50,17 @@ def to_h5(metAry, dest, debug=False):
 
     If dest is a string, it is interpret as the destination file path.
 
-    If dest is a h5py.Group object, the content will be store under the given group.
+    If dest is a h5py.Group object, the content will be store
+    under the given group.
     """
 
     # Writing to existing group
     if isinstance(dest, h5py.Group):
-        dest.create_dataset('ndarray', data=metAry.data)    # Write the array
-        __dict_loop(metAry.info, dest.create_group('info')) # Write the meta info
+        # Write the array
+        dest.create_dataset('ndarray', data=metAry.data)
+        # Write the meta info
+        __dict_loop(metAry.info, dest.create_group('info'))
         return
-
 
     # Writing file to path
     path = filePath(dest)
@@ -112,10 +72,8 @@ def to_h5(metAry, dest, debug=False):
         f.create_dataset('ndarray', data=metAry.data)     # Write the array
         __dict_loop(metAry.info, f.create_group('info'))  # Write the meta info
 
-    return
 
-
-def __read_info(h5):
+def __read_info(h5: h5py.File) -> dict:
     """
     Recursively read items the given h5py object into dict
 
@@ -141,7 +99,6 @@ def __read_info(h5):
 
             info[key] = content
 
-
     # Process the grp_lst
     for key in grp_lst:
         info[key] = __read_info(h5[key])
@@ -149,7 +106,7 @@ def __read_info(h5):
     return info
 
 
-def from_h5(src, debug=False):
+def from_h5(src: typing.Union[str, h5py.Group]) -> metaArray:
     """
     Read the HDF5 file in the given path, build the metAry accordingly.
 
@@ -157,21 +114,21 @@ def from_h5(src, debug=False):
 
     If src is a string, it is interpret as the destination file path.
 
-    If src is a h5py.Group object, the content will be read from the given group.
-
+    If src is a h5py.Group object, the content will be read from
+    the given group.
     """
-
     # Reading from existing group
     if isinstance(src, h5py.Group):
         ary = src['ndarray'][()]          # Read the array
         info = __read_info(src['info'])   # Read the meta info
+        return metaArray(ary, info=info)
 
     # Reading from file path
     path = filePath(src)
 
     if not path.exist:
         raise IOError('File ' + str(path.full) + ' does not exist')
-    
+
     if not path.read:
         raise IOError("Unable to read from: " + str(path.full))
 

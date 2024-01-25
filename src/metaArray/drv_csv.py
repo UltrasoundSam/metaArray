@@ -8,7 +8,6 @@ File for controlling csv file reading
 """
 import numpy.typing as npt
 import typing
-import h5py
 
 from os import linesep
 from itertools import groupby
