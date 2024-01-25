@@ -25,8 +25,11 @@ Package dependency:
  scipy
 '''
 import numpy as np
+import numpy.typing as npt
 import typing
 import os
+
+from scipy.signal import filtfilt as scipy_filtfilt
 
 
 def linearFunc(x0: float, y0: float, x1: float,
@@ -122,3 +125,27 @@ class filePath:
         desc += 'extension: ' + self.ext + os.linesep
 
         return desc
+
+
+def filtfilt(b: npt.ArrayLike, a: npt.ArrayLike, x: npt.ArrayLike,
+             axis: int = -1, padtype: str = 'odd',
+             padlen: int = None) -> npt.NDArray[np.float_]:
+    """
+    Local substitution of the scipy.signal.filtfilt funtion.
+
+    By default, scipy.signal.filtfilt will pad the data with its end point
+    values. This can be problematic for 'noisy' data, where the end point
+    values can be significantly different from the local average values.
+
+    This version will manually force the end points inplace to be the local
+    average values. The longest of the filter coefficients are taken as the
+    average length.
+    """
+    length = max((len(a), len(b)))
+
+    # Modify the end points to force a specific padding value.
+    # This will avoid spikes at end points for 'noisy' data
+    x[0] = x[:length].mean()
+    x[-1] = x[-length:].mean()
+
+    return scipy_filtfilt(b, a, x, axis=axis, padtype=padtype, padlen=padlen)
