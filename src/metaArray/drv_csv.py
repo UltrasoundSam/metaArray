@@ -352,33 +352,6 @@ def open_csv(path: str, mode: str, debug: bool = False,
         raise NotImplementedError
 
 
-def __dict_loop(dic: dict, h5: h5py.File) -> None:
-    """
-    Recursively store items in a dictionary object into given h5py object as
-    h5py.Dataset.
-
-    If the dictionary item is itself an dictionary object, create a h5py.Group,
-    and store subsequent items within.
-    """
-
-    # List of keys to the items in the current dict is itself a dict
-    dict_lst = []
-
-    # First loop, store all the simple data, and build the dict_lst
-    for key, val in dic.items():
-        if isinstance(val, dict):
-            dict_lst.append(key)
-        else:
-            h5.create_dataset(key, data=val)
-
-    # Process the dic_lst
-    for key in dict_lst:
-        # Create a subgroup
-        grp = h5.create_group(key)
-
-        __dict_loop(dic[key], grp)
-
-
 def to_csv(metAry: metaArray, path: str, debug: bool = False,
            field_delimiter: str = ',', text_delimiter: str = '"',
            linesep="\r\n") -> None:
