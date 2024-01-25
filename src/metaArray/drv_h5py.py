@@ -10,36 +10,8 @@ import numpy as np
 import typing
 import h5py
 
-from .core import metaArray
+from .core import metaArray, __dict_loop
 from .misc import filePath
-
-
-def __dict_loop(dic: dict, h5: h5py.File) -> None:
-    """
-    Recursively store items in a dictionary object into given h5py object as
-    h5py.Dataset.
-
-    If the dictionary item is itself an dictionary object, create a h5py.Group,
-    and store subsequent items within.
-    """
-
-    # List of keys to the items in the current dict is itself a dict
-    dict_lst = []
-
-    # First loop, store all the simple data, and build the dict_lst
-    for key, val in dic.items():
-        if isinstance(val, dict):
-            dict_lst.append(key)
-        else:
-            h5.create_dataset(key, data=val)
-
-    # Process the dic_lst
-    for key in dict_lst:
-
-        # Create a subgroup
-        grp = h5.create_group(key)
-
-        __dict_loop(dic[key], grp)
 
 
 def to_h5(metAry: metaArray, dest: typing.Union[str, h5py.Group]) -> None:
