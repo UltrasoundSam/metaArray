@@ -11,11 +11,13 @@ defining the metaArray object.
 import numpy as np
 import numpy.typing as npt
 import typing
+import h5py
 
 from os import linesep
 from copy import deepcopy
 
-from .misc import linearFunc, logFunc, expFunc
+from .misc import linearFunc, logFunc, expFunc, filePath
+from .drv_h5py import __dict_loop
 
 
 # Alias for common type
@@ -941,6 +943,23 @@ class metaArray:
             output.append(slice(begin, end))
 
         return tuple(output)
+
+    def to_h5(self, dest: str) -> None:
+        """
+        Write the metAry into given file path in the HDF5 format
+
+        dest is interpret as the destination file path.
+        """
+        # Writing file to path
+        path = filePath(dest)
+
+        if not path.write:
+            raise ValueError("Unable to write to: " + str(path.full))
+
+        with h5py.File(path.full, 'w') as f:
+            # Write data array then metainfo
+            f.create_dataset('ndarray', data=self.data)
+            __dict_loop(self.info, f.create_group('info'))
 
     def unitChk(self, b: 'metaArray') -> bool:
         """
