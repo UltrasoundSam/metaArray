@@ -14,4 +14,10 @@ from .misc import gettypecode, unit_prefix, resample
 from .misc import cplx_trig_func, mother_morlet, spline_resize
 
 # metaArray aware Plotting lib (based on matplotlib)
-from metaArray.drv_pylab import plot1d, plot2d, plotcomplex, plotcomplexpolar
+from .drv_pylab import plot1d, plot2d, plotcomplex, plotcomplexpolar
+
+# File I/O
+from .drv_h5py import to_h5, from_h5
+
+# External devices
+from .drv_ritec import Ritec4000
