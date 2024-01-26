@@ -16,7 +16,7 @@ import h5py
 from os import linesep
 from copy import deepcopy
 
-from .misc import linearFunc, logFunc, expFunc, filePath
+from .misc import linear_func, log_func, exp_func, filePath
 
 
 # Alias for common type
@@ -841,13 +841,13 @@ class metaArray:
                     # Start stop at the same point
                     lst.append(lambda x: 0.)
                 else:
-                    lst.append(linearFunc(x0[i], 0, x1[i], shape[i]))
+                    lst.append(linear_func(x0[i], 0, x1[i], shape[i]))
             elif isinstance(lg[i], int) or isinstance(lg[i], float):
                 # Log scale applied, given log base.
-                lst.append(logFunc(x0[i], 0, x1[i], shape[i], base=lg[i]))
+                lst.append(log_func(x0[i], 0, x1[i], shape[i], base=lg[i]))
             elif lg[i]:
                 # Log scale applied, use default base
-                lst.append(logFunc(x0[i], 0, x1[i], shape[i]))
+                lst.append(log_func(x0[i], 0, x1[i], shape[i]))
             else:
                 raise ValueError(f"Log scale descriptor can only be int,\
                                  float, True, False or None, given: {lg[i]}")
@@ -886,13 +886,13 @@ class metaArray:
                     # Start stop at the same point
                     lst.append(lambda x: x0[i])
                 else:
-                    lst.append(linearFunc(0, x0[i], shape[i], x1[i]))
+                    lst.append(linear_func(0, x0[i], shape[i], x1[i]))
             elif isinstance(lg[i], (int, float)):
                 # Log scale applied, given log base.
-                lst.append(expFunc(x0[i], 0, x1[i], shape[i], base=lg[i]))
+                lst.append(exp_func(x0[i], 0, x1[i], shape[i], base=lg[i]))
             elif lg[i]:
                 # Log scale applied, use default base
-                lst.append(expFunc(x0[i], 0, x1[i], shape[i]))
+                lst.append(exp_func(x0[i], 0, x1[i], shape[i]))
             else:
                 raise ValueError("Log scale descriptor can only be int,\
                     float, True, False or None, given: " + str(lg[i]))

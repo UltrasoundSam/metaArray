@@ -12,6 +12,8 @@ import scipy as sp
 import numpy.typing as npt
 import typing
 import decimal
+import struct
+import datetime
 import os
 
 from scipy.signal import filtfilt as scipy_filtfilt
@@ -32,6 +34,41 @@ class InsufficientInput(ValueError):
     Not all the necessary parameters can be calculated from the given inputs.
     """
     pass
+
+
+class dirPath:
+    """
+    DirPath object, provide various information about the dir path
+
+    currently provide the following:
+
+    self.full       The full path, i.e. the input string
+    self.name       The dir name
+    self.read       Whether it is readable
+    self.write      Whether it is writable
+    self.exist      Whether it already exists
+    """
+
+    def __init__(self, path: str) -> None:
+
+        self.full = path = os.path.abspath(path.strip())
+        self.name = os.path.basename(path)
+        self.read = os.access(path, os.R_OK)
+        self.write = os.access(path, os.W_OK)
+        self.exist = os.access(path, os.F_OK)
+
+    def __repr__(self) -> str:
+        """
+        Text representation of the object
+        """
+        desc = ''
+        desc += 'Full: ' + self.full + os.linesep
+        desc += 'Name: ' + self.name + os.linesep
+        desc += 'Read: ' + str(self.read) + os.linesep
+        desc += 'Write: ' + str(self.write) + os.linesep
+        desc += 'exist: ' + str(self.exist) + os.linesep
+
+        return desc
 
 
 class filePath:
@@ -369,6 +406,310 @@ class mother_morlet:
         return desc
 
 
+def file_list(base_dir: str, ext: str = None,
+              sub_dir: bool = False) -> list[str]:
+    """
+    Generate a list containing the absolute path of all of the files matching
+    the selection criteria under the given directory.
+
+    If base_dir is given as a file path, return as a single item list.
+    """
+    base_dir = os.path.abspath(base_dir.rstrip(os.sep))
+
+    # Create a list of files
+    flist = []
+    if os.path.isdir(base_dir):
+        if sub_dir is True:
+            for root, dirs, files in os.walk(base_dir):
+                for name in files:
+                    f = filePath(os.path.abspath(os.path.join(root, name)))
+                    if ext is not None:
+                        if f.ext != ext:
+                            continue
+                    flist.append(f.full)
+        else:
+            for fname in os.listdir(base_dir):
+                fname = os.path.abspath(os.path.join(base_dir, fname))
+                if os.path.isfile(fname):
+                    f = filePath(fname)
+                    if ext is not None:
+                        if f.ext != ext:
+                            continue
+                    flist.append(f.full)
+    elif os.path.isfile(base_dir):
+        f = filePath(base_dir)
+        if ext is not None:
+            if f.ext != ext:
+                return []
+        return [f.full]
+    else:
+        raise IOError("Given path is not a dir")
+
+    flist.sort()
+
+    return flist
+
+
+def extrema(x: npt.ArrayLike, max: bool = True, min: bool = True,
+            strict: bool = False,
+            withend: bool = True) -> tuple[int, float]:
+    """
+    This function will index the extrema of a given array x.
+
+    Options:
+        max     If true, will index maxima
+        min     If true, will index minima
+        strict  If true, will not idex changes to zero gradient
+        withend If true, always include x[0] and x[-1]
+
+    This function will return a tuple of extrema indexies and values
+    """
+
+    x_len = len(x)
+
+    # This is the gradient
+
+    # f'(x)
+    # Clean up the gradient in order to pick out any change of sign
+    # and allow the detection of changes to zero gradient
+    dx = np.zeros(x_len)
+    dx[1:] = np.sign(np.diff(x))
+    dx[0] = dx[1]
+
+    # f''(x) to pick out the spikes
+    # abs(f''(x)) = 1 if +ve <-> 0 <-> -ve
+    # abs(f''(x)) = 2 if +ve <-> -ve
+    d2x = np.zeros(x_len)
+    d2x[:-1] = np.diff(dx)
+
+    # See ind = nonzero(d2x > threshold)[0]
+    if max and min:
+        d2x = np.abs(d2x)
+    elif max:
+        d2x = -d2x
+
+    # Take care of the two ends
+    if withend:
+        d2x[0] = 2
+        d2x[-1] = 2
+
+    # define the threshold for whether to pick out changes to zero gradient
+    threshold = 0
+    if strict:
+        threshold = 1
+
+    # Sift out the list of extremas
+    ind = np.nonzero(d2x > threshold)[0]
+
+    return ind, x[ind]
+
+
+def zerocrossings(x: npt.ArrayLike) -> int:
+    """
+    This function will return the number of zero crossings in the given
+    1-D numpy array.
+
+    This function will pick out both types of zero crossings:
+        Type I: +ve -> -ve, or -ve -> +ve
+        Type II: +ve -> zero(s) -> -ve, or -ve -> zero(s) -> +ve
+    """
+
+    dsx = np.diff(np.sign(x))
+
+    # Pick out +ve <-> -ve type (I) zero crossings
+    ind = np.nonzero(np.abs(dsx) > 1)[0]
+    # zero crossing count
+    count = len(ind)
+
+    # Pick out +ve <- 0 -> -ve type (II) zero crossings
+    idsx = dsx.copy()
+    # Remove type I zero crossings from list
+    idsx[ind] = 0
+
+    # Need two consecutive sign change to make a zero crossing
+    # Remove zeros in the list
+    idsx = idsx[idsx.nonzero()[0]]
+
+    cidsx = np.abs(idsx.cumsum()) - 1
+    ind = cidsx.nonzero()[0]
+    count += len(ind)
+
+    return count
+
+
+def resample(time: npt.ArrayLike, data: npt.ArrayLike,
+             rate=False) -> tuple[npt.NDArray, npt.NDArray]:
+    """
+    Resample the data series into the given sampling rate, this is
+    implemented using the cubic spline interpolation.
+
+    No filtering is done in here, anti-aliasing filters maybe necessary if
+    down-sampling.
+
+    Will try to find the next highest sampling rate by default. The
+    resampled data will always align at time 0, and never exceed the
+    duration of the given data.
+
+    The sampling rate will come in multiples of 1, 2, or 5Hz
+
+    N.B. This funtion was initially created to harmonise the sampling rates
+    between FE simulations, they often have different time steps depends on the
+    simulation parameters.
+    """
+
+    # Get an idea of the input datatype.
+    ttype = time.dtype
+    dtype = data.dtype
+
+    # Get an idea of time step
+    t0 = time[0]
+    t1 = time[-1]
+    duration = t1 - t0
+    step = duration / len(time)
+    smp_rate = 1 / step
+
+    if rate:
+        # The sampling rate is supplied, no need to estimate.
+        spl_rate = rate
+        spl_step = 1 / spl_rate
+    else:
+        # Find out the exponent of the current sampling rate
+        exponent = decimal.Decimal(str(smp_rate)).adjusted()
+
+        # Remove the exponent
+        scale = smp_rate * 10**(0 - exponent)
+
+        # make the standard scale slightly larger (1e-5) so numerical
+        # error (rounding error) do not come in to play and force it up
+        # to the next sampling scale
+        if scale > 5.00005:
+            scale = 10
+        elif scale > 2.00002:
+            scale = 5
+        elif scale > 1.00001:
+            scale = 2
+        else:
+            # This really shouldnt happen, but just in case the Decimal
+            # function return numbers like 0.123e+45 instead of 1.23e+45
+            scale = 1
+            print(f"Warning!! Unexpected values for scale evaluation! \
+                  scale variable ({scale}) should be greater than 1.")
+
+        # This is what the sampling rate should be
+        spl_rate = scale * 10**exponent
+        spl_step = 1.0 / spl_rate
+
+    # Make sure it always starts later
+    spl_i0 = int(np.ceil(t0 / spl_step))
+
+    # Make sure it always finish earlier
+    spl_i1 = int(np.floor(t1 / spl_step))
+
+    # Work out maximum number of data points at the given sampling rate
+    spl_length = np.abs(spl_i1 - spl_i0)
+
+    spl_time = np.linspace(spl_i0 * spl_step, spl_i1 * spl_step, spl_length)
+
+    # Fit the cubic spline line
+    spline = sp.interpolate.splrep(time, data, k=3)
+
+    spl_data = sp.interpolate.splev(spl_time, spline)
+
+    return [spl_time.astype(ttype), spl_data.astype(dtype)]
+
+
+def filtfilt(b: npt.ArrayLike, a: npt.ArrayLike, x: npt.ArrayLike,
+             axis: int = -1, padtype: str = 'odd',
+             padlen: int = None) -> npt.NDArray[np.float_]:
+    """
+    Local substitution of the scipy.signal.filtfilt funtion.
+
+    By default, scipy.signal.filtfilt will pad the data with its end point
+    values. This can be problematic for 'noisy' data, where the end point
+    values can be significantly different from the local average values.
+
+    This version will manually force the end points inplace to be the local
+    average values. The longest of the filter coefficients are taken as the
+    average length.
+    """
+    length = max((len(a), len(b)))
+
+    # Modify the end points to force a specific padding value.
+    # This will avoid spikes at end points for 'noisy' data
+    x[0] = x[:length].mean()
+    x[-1] = x[-length:].mean()
+
+    return scipy_filtfilt(b, a, x, axis=axis, padtype=padtype, padlen=padlen)
+
+
+def spline_resize(x: npt.ArrayLike, n: int,
+                  length: typing.Union[float, int] = 0.005,
+                  window: str = 'hamming',
+                  order: int = 3) -> npt.NDArray:
+    """
+    Resize the ndarray x in to n elements long.
+
+    Default order of spline interpolation is cubic.
+
+    If upsampling (n > len(x)), (cubic) spline interpolation will be used.
+
+    If downsampling, two pass anti-aliasing Type I FIR filter will be applied,
+    once forward and once reverse to null the group delay, then (cubic) spline
+    interpolation will be used to resample the data.
+
+    l           Length of the FIR filter, default to len(x) / 200, mimimum 3
+    window      Window method to generate the FIR filter
+
+    Window options:
+        boxcar
+        triang
+        blackman
+        hamming
+        hann
+        bartlett
+        flattop
+        parzen
+        bohman
+        blackmanharris
+        nuttall
+        barthann
+        kaiser (needs beta)
+        gaussian (needs std)
+        general_gaussian (needs power, width)
+        slepian (needs width)
+        chebwin (needs attenuation)
+
+    """
+
+    m = len(x)
+    if m == n:
+        return x            # Do nothing, no need to resize
+
+    r = float(n) / m
+    y = x.copy()
+    if r > 1:               # Up sampling, no need to filter
+        y = x.copy()
+    else:                   # r < 1, Down sampling, apply anti-aliasing filter
+
+        if type(length) is float:
+            length = int(np.round(len(x) * length))     # FIR filter length
+
+        if length % 2 == 0:
+            length += 1  # l must be odd for Type I filter
+
+        if length < 3:
+            length = 3   # Make sure l is at least three
+
+        # a = [1.]
+        b = sp.signal.firwin(length, r, window=window)
+
+        y = filtfilt(b, [1.], y)
+
+    # Cubic spline interpolation
+    s = sp.interpolate.InterpolatedUnivariateSpline(np.arange(m), y, k=order)
+    return s(np.linspace(0, m-1, n))
+
+
 def unit_prefix(num: typing.Union[int, float]) -> tuple[float, str, str, int]:
     """
     Work out the appropriate unit prefix for a given number
@@ -474,8 +815,388 @@ def pretty_unit(unit: str, v0: float,
     return (unit, v0, v1, scale)
 
 
-def linearFunc(x0: float, y0: float, x1: float,
-               y1: float) -> typing.Callable[[float], float]:
+def eng_unit(num: float, unit: str = "",
+             sigfig: int = None) -> str:
+    """
+    Return a print string for num with approprate engineering unit
+
+    """
+
+    prefix = unit_prefix(num)
+
+    if sigfig is None:
+        return str(prefix[0]) + prefix[2] + unit
+
+    num = prefix[0]
+    scale = 10 ** decimal.Decimal(str(num)).adjusted()
+
+    # Round to correct sig fig
+    num = np.round((num / scale), sigfig - 1) * scale
+    num = f'{num:0.15f}'
+    # 1 decimal point, 1 sign
+    num = num[:sigfig+2].rstrip('.')
+
+    engstr = num + prefix[2] + unit
+
+    return engstr.strip()
+
+
+def buffered_search(f: typing.IO, string: typing.Union[str, bytes],
+                    start: int = 0,
+                    buffer_size: int = 4194304) -> int:
+    """
+    Given a file object [f], search for the location of [string], from the
+    given [start] offset position.
+
+    This function will only read [buffer_size] bytes into memory at a time.
+
+    Return -1 if string not found.
+    """
+    str_len = len(string)
+
+    if str_len > buffer_size:
+        raise BufferError("Target string longer than buffer length.")
+
+    f_pos = start
+
+    while True:
+        f.seek(f_pos)
+        buf = f.read(buffer_size)
+
+        if buf == '':
+            return -1                           # Reached the end of the file
+
+        str_pos = buf.find(string)
+
+        if str_pos == -1:
+            # Couldn't find the string yet, but the file is not finished
+            # Roll back, and continue to search
+            f_pos = f_pos + buffer_size - str_len
+            continue
+        else:
+            return f_pos + str_pos
+
+
+def smooth_angle(x: npt.ArrayLike, start: int = None,
+                 end: int = None) -> npt.NDArray:
+    """
+    Join up the phase angles in a numpy array
+
+    Majority of the data between index start and end are to be within +_ pi,
+    i.e. the first phase semi-circle.
+
+    The input array can the about of numpy.angle() for example, it is expected
+    that the array values are between +_ 2*pi
+    """
+
+    pi2 = 2*np.pi
+    dx = np.zeros(len(x), dtype='float')
+    dx[1:] = np.diff(x)
+    dx[dx > np.pi] -= pi2
+    dx[dx < -np.pi] += pi2
+    # Second pass to remove those with +2pi to - 2pi changes
+    dx[dx > np.pi] -= pi2
+    dx[dx < -np.pi] += pi2
+
+    # Put back the first element
+    dx[0] = x[0]
+
+    if (start is None) and (end is None):
+        return dx.cumsum()
+    else:
+        output = dx.cumsum()
+        npi = np.round(output[start:end].mean() / np.pi)
+        # print npi
+        return output - (npi * np.pi)
+
+
+def zero_stretches(x: npt.ArrayLike, zero_threshold: float = 1e-6,
+                   zero_runlength: int = 3,
+                   atol: float = 1e-12) -> tuple[npt.NDArray[np.int_],
+                                                 npt.NDArray[np.int_]]:
+    """
+    Running zero detection.
+
+    Given numpy ndarray x, find stretches of zero values, and return
+    a tuple of indexes indicating the beginning and ending of the
+    stretches.
+
+    options:
+        zero_threshold = 1e-6       Magnitude threshold (relative to the
+                                    max signal magnitude) at which a
+                                    Least number of consecutive zeros
+                                    before it is considered a running
+                                    strip.
+
+        zero_runlength = 3          Minimum consecutive zeros before it
+                                    is consider as a stretch, minium
+                                    necessary for stability. Cubic
+                                    splines need 3pts to come to
+                                    complete stop.
+
+        atol = 1e-12                Absolute threshold for zero finding.
+
+     This is NOT an attempt to find zero crossing.
+
+    ###########################################################################
+     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21]   index
+    ###########################################################################
+     [1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1]   z
+     [0 -1, 1,-1, 0, 1, 0, 0, 0, 0,-1, 0, 0, 1, 0,-1, 0, 0, 0, 0, 1, 0]   dz
+    ###########################################################################
+     [   1,    3,                  10,            15                  ]   Begin
+     [      2,       5,                     13,                  20   ]   End
+    ###########################################################################
+
+    Returns:
+        (array([ 1,  3, 10, 15]), array([ 2,  5, 13, 20]))
+    """
+    # Do the abs, just incase x is complex
+    m = np.abs(x)
+
+    # Map out all the zeros
+    z = np.ones(len(m), dtype=int)
+    z[np.where(m < max(max(m)*zero_threshold, atol))[0]] = 0
+
+    dz = np.zeros(len(m), dtype=int)
+    dz[1:] = np.diff(z)
+
+    # Manually add zero starts
+    if z[0] == 0:
+        dz[0] = -1
+
+    start = np.where(dz == -1)[0]
+    end = np.where(dz == 1)[0]
+
+    # Manually add zero ends
+    if z[-1] == 0:
+        end = np.append(end, len(z))
+
+    # Filter out those below the runlength threshold
+    z_th = np.where((end - start) >= zero_runlength)[0]
+
+    start = start[z_th]
+    end = end[z_th]
+
+    return (start, end)
+
+
+def resolve_complex_collusion(knots: npt.ArrayLike, asint: bool = True,
+                              threshold: float = 0) -> npt.NDArray:
+    """
+    This function will search for items with identical real part (as int)
+    in a complex array, reduce them to an item with the same int real
+    part, and averaged imaginary value.
+
+    This is useful when a complex array is used to define the knots for
+    interpolation, such that the real part indicates position, and the
+    imaginary part represent the corresponding value. Some interpolation
+    algorithms don't like knots with identical positions, or even not
+    having the knots sorted by the order of their position.
+
+    Option:
+    asint       If true, the position is assumed to have int value, and
+                will be detected and tidied up as int.
+
+    threshold   How close should the positions be before they are
+                considered identical.
+
+    #######################################################################
+    # 0   1   2   3   4   5   6   7   8  15  16                 # Results #
+    #######################################################################
+    # 0   1   2   2   2   3   4   5   6   6   7   8  15  16     # idx     #
+    #######################################################################
+    """
+
+    knots = np.sort(knots)
+
+    if asint:
+        # Cast all index into int
+        idx = np.round(np.real(knots)).astype(int)
+        didx = np.ones(len(idx))
+        # Knot index should at least advance by 1
+        didx[1:] = np.diff(idx)
+        pos = np.where(didx < 1)[0]
+        # Create a list of colliding positions
+        # Only select those with didx just became zero
+        # (i.e. the first collusion)
+        collusions = idx[pos[np.nonzero(didx[pos-1])[0]]]
+        # Walk through the list of collusions
+        for i in collusions:
+            # Select those with same collusion index
+            pos = np.where(idx == i)[0]
+            # Get the averaged value
+            val = np.imag(knots[pos]).mean()
+            # Write them as -1 to signify invalid data
+            knots[pos] = -1
+            # Insert the averaged
+            knots[pos[0]] = i + 1j*val
+
+    else:
+        idx = np.real(knots)
+        didx = np.ones(len(idx))
+        # Knot index should at least advance by the amount defined by threshold
+        didx[1:] = (np.diff(idx) > threshold).astype(int)
+        # Create a list of colliding positions
+        collusions = zero_stretches(didx, zero_runlength=1)
+        # Walk through the list of collusions
+        for i in zip(collusions[0], collusions[1]):
+            begin = i[0] - 1
+            end = i[1]
+            # calculate the avg position
+            pos = idx[begin:end].mean()
+            # calculate the avg value
+            val = np.imag(knots)[idx[begin:end]].mean()
+            # Write them as -1 to signify invalid data
+            knots[begin:end] = -1
+            # Insert the averaged
+            knots[begin] = pos + 1j*val
+
+    return np.sort(knots)[len(np.where(knots == -1)[0]):]
+
+
+def gettypecode(bytelen: int,
+                dtype: typing.Union[str, float, int]) -> str:
+    """
+    Given the bit length and desired data type, work out the
+    approprate type code.
+
+    bytelen     <int>  Number of bytes
+    dtype       {'int'|'Uint'|'float'}
+    """
+    #
+    # Format   C Type             Python
+    #  x      pad byte           no value
+    #  c      char               string of length 1
+    #  b      signed char        integer
+    #  B      unsigned char      integer
+    #  h      short              integer
+    #  H      unsigned short     integer
+    #  i      int                integer
+    #  I      unsigned int       long
+    #  l      long               integer
+    #  L      unsigned long      long
+    #  q      long long          long
+    #  Q      unsigned long long long
+    #  f      float              float
+    #  d      double             float
+    #  s      char[]             string
+    #  p      char[]             string
+    #  P      void *             integer
+    #
+    # Numpy takes:
+    # ['c', 'b', 'u', 'i', 'l', 'f', 'd', 'F', 'D', 'O']
+    #
+
+    if dtype == 'int' or dtype is type(int):
+        lst = ['b', 'h', 'i', 'l', 'q']
+    elif dtype == 'Uint':
+        lst = ['B', 'H', 'I', 'L', 'Q']
+    elif dtype == 'float' or dtype is type(float):
+        lst = ['f', 'd']
+    # elif dtype == 'complex':
+    #     lst = ['F','D']
+    else:
+        raise ValueError(f'Specified dtype: {dtype} is not recognised.')
+
+    for typecode in lst:
+        if struct.calcsize(typecode) == bytelen:
+            return typecode
+
+    # Unable to find a match
+    raise ValueError(f'Unable to find a suitable typecode for the speficied \
+                     dtype ({dtype}) and byte length ({bytelen}).')
+
+
+def quantise(ary: npt.ArrayLike, threshold: float = 1e-8) -> float:
+    """
+    It will attempt to find the quantisation step size of a float array
+
+    Quantisation error should not be bigger than the fraction of
+    quantisation step size given by the threshold.
+
+    Return quantisation step if a reasonable value is found
+    """
+
+    # Find the smallest non-zero increment
+    quantum = np.abs(np.diff(ary))
+    quanter = quantum[np.nonzero(quantum)].min()
+
+    # See if all increments are multiples of the quanter
+    # Attempt quantisation
+    quantum /= quanter
+    # Remove the whole number multiples
+    quantum -= np.floor(quantum)
+    #  Inflate the fractional error by threshold amount
+    quantum /= threshold
+    offlimit = np.squeeze(np.nonzero(quantum > quanter))
+
+    if len(offlimit) != 0:
+        raise QuantsationError
+    else:
+        return quanter
+
+
+def decimate2(x: npt.ArrayLike, n: int = None,
+              axis: int = -1, window: str = 'hamming') -> npt.NDArray:
+    """
+    Similar to scipy.signal.decimate, but fixed decimation factor to q = 2, and
+    force two pass FIR filter to ensure zero group delay.
+
+    The FIR is generated by the windowing method. Type I filter is always used
+    to have band-stop charasterics on the Nyquist
+
+    If filter length n is not specified, then n is choosen to be two hundred
+    times smaller than len(x).
+
+    Example:
+
+        halved = decimate2(x)
+    """
+
+    if n is None:
+        n = int(np.round(len(x) / 200.0))
+
+    if n < 3:
+        n = 3
+
+    # n must be odd for Type I filter
+    if n % 2 == 0:
+        n += 1
+
+    b = sp.signal.firwin(n, 0.5, window=window)
+    a = 1.
+
+    y = sp.signal.lfilter(b, a, x, axis=axis)           # First pass
+    y = sp.signal.lfilter(b, a, y[::-1], axis=axis)     # Reverse pass
+    y = y[::-1]                               # Reverse the result
+
+    sl = [slice(None)] * y.ndim
+    sl[axis] = slice(None, None, 2)
+
+    return y[sl]
+
+
+def timestamp():
+    """
+    st = timestamp()
+
+    '2014-12-15 01:21:05'
+    """
+    return datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+
+
+def datestamp():
+    """
+    st = datestamp()
+
+    '2014-12-15'
+    """
+    return datetime.date.today().strftime('%Y-%m-%d')
+
+
+def linear_func(x0: float, y0: float, x1: float,
+                y1: float) -> typing.Callable[[float], float]:
     """
     Return a linear function given two points in space.
     """
@@ -488,8 +1209,8 @@ def linearFunc(x0: float, y0: float, x1: float,
     return lambda x: k * x + b
 
 
-def logFunc(x0: float, y0: float, x1: float,
-            y1: float, base: int = 10) -> typing.Callable[[float], float]:
+def log_func(x0: float, y0: float, x1: float,
+             y1: float, base: int = 10) -> typing.Callable[[float], float]:
     """
     Return a logarithmic function mapped on a arb. linear scale, given
     two points in space.
@@ -505,8 +1226,8 @@ def logFunc(x0: float, y0: float, x1: float,
     return lambda x: k * np.log(x)/np.log(base) + b
 
 
-def expFunc(x0: float, y0: float, x1: float,
-            y1: float, base: int = 10) -> typing.Callable[[float], float]:
+def exp_func(x0: float, y0: float, x1: float,
+             y1: float, base: int = 10) -> typing.Callable[[float], float]:
     """
     Return a exponential function mapped on a arb. linear scale, given
     two points in space.
@@ -521,25 +1242,58 @@ def expFunc(x0: float, y0: float, x1: float,
     return lambda x: base ** (k * x + b)
 
 
-def filtfilt(b: npt.ArrayLike, a: npt.ArrayLike, x: npt.ArrayLike,
-             axis: int = -1, padtype: str = 'odd',
-             padlen: int = None) -> npt.NDArray[np.float_]:
+def linearChk(ary: npt.ArrayLike, axis: int = -1,
+              strict: bool = False) -> typing.Union[True, float]:
     """
-    Local substitution of the scipy.signal.filtfilt funtion.
+    This will check whether the input array, along the given axis
+    (default is a 1-D array) has a equal increments between elements.
 
-    By default, scipy.signal.filtfilt will pad the data with its end point
-    values. This can be problematic for 'noisy' data, where the end point
-    values can be significantly different from the local average values.
+    Return true if it is linear, else, return the maximum difference.
 
-    This version will manually force the end points inplace to be the local
-    average values. The longest of the filter coefficients are taken as the
-    average length.
+    Will compare to numerical accuracy if strict option == True, else it
+    is assume linear if none of the element is deviate more than one
+    increment away. String representations of numbers often have lower
+    precision than binary representation.
+
     """
-    length = max((len(a), len(b)))
 
-    # Modify the end points to force a specific padding value.
-    # This will avoid spikes at end points for 'noisy' data
-    x[0] = x[:length].mean()
-    x[-1] = x[-length:].mean()
+    # Select the correct axis
+    if axis == -1:
+        tst = ary
+    else:
+        tst = ary[axis]
 
-    return scipy_filtfilt(b, a, x, axis=axis, padtype=padtype, padlen=padlen)
+    # Generate the linear reference array
+    linear = np.linspace(tst[0], tst[-1], len(tst))
+
+    # Compute the maximum deviation from linear expectation
+    diff = max(np.abs(linear - tst))
+
+    if diff == 0:
+        # Excellent! Linear to within numerical accuracy
+        return True
+    elif strict is True:
+        return diff   # Strict rules apply
+    else:   # Relax the rules a little
+        if diff < np.abs(linear[1] - linear[0]):
+            return True  # none of the elements overlap
+        else:
+            return diff  # Even relaxed rules cant save this one
+
+
+def logChk(ary: npt.ArrayLike, axis: int = -1,
+           strict: bool = False) -> typing.Union[True, float]:
+    """
+    This will check whether the input array, along the given axis
+    (default is a 1-D array) has a equal increments between elements
+    in log scale.
+
+    Return true if it is linear, else, return the maximum difference.
+
+    Will compare to numerical accuracy if strict option == True, else it
+    is assume linear if none of the element is deviate more than one
+    increment away. String representations of numbers often have lower
+    precision than binary representation.
+
+    """
+    return linearChk(np.log(ary[axis], strict=strict))
