@@ -11,7 +11,7 @@ from .example import demo
 # Helper functions from misc
 from .misc import dirPath, filePath, file_list, buffered_search
 from .misc import gettypecode, unit_prefix, resample
-from .misc import cplx_trig_func, mother_morlet, spline_resize
+from .misc import cplx_trig_func, MotherMorlet, spline_resize
 
 # metaArray aware Plotting lib (based on matplotlib)
 from .drv_pylab import plot1d, plot2d, plotcomplex, plotcomplexpolar
@@ -22,3 +22,6 @@ from metaArray.drv_Tek import isf, DPO2000_csv, TDS2000_csv, DPO2000_isf
 
 # External devices
 from .drv_ritec import Ritec4000
+
+# metaArray aware numerical transforms
+from metaArray.metaTrans import rfft, stfft, cwt

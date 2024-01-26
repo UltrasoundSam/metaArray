@@ -317,7 +317,7 @@ class cplx_trig_func:
         self.flg_resolved = True
 
 
-class mother_morlet:
+class MotherMorlet:
     """
     A mother morlet object
     """

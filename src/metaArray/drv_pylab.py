@@ -570,7 +570,7 @@ def plot2d(metaAry: metaArray, size: tuple[float, float] = (10, 7.5),
            show_cbar: bool = True, vmin: float = None, vmax: float = None,
            interpolation: str = 'sinc',
            fig: plt.Figure = None,
-           ax: plt.Axe = None) -> tuple[plt.Figure, plt.Axes]:
+           ax: plt.Axes = None) -> tuple[plt.Figure, plt.Axes]:
     """
     metaArray function to do a simple 2D plot.
 

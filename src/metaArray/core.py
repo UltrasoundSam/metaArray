@@ -769,7 +769,7 @@ class metaArray:
 
         nfo_range = self.info['range']
 
-        if nfo_range.has_key(field):
+        if field in nfo_range:
             nfo_range[field][axis] = value
         else:
             raise ValueError(f"Requested field ({field}) name do not exist")
@@ -784,7 +784,7 @@ class metaArray:
         """
         nfo_range = self.info['range']
 
-        if nfo_range.has_key(field):
+        if field in nfo_range:
             return nfo_range[field][axis]
         else:
             raise ValueError(f"Requested field ({field}) name do not exist")
@@ -1135,7 +1135,7 @@ class metaArray:
             for field in binfo.keys():
                 if field.find('.') != -1:
                     continue
-                elif info.has_key(field):
+                elif field in info:
                     if info[field] != binfo[field]:
                         info[field] += '|' + op + '|' + binfo[field]
                 else:
@@ -1237,7 +1237,7 @@ class metaArray:
             for field in binfo.keys():
                 if field.find('.') != -1:
                     continue
-                elif info.has_key(field):
+                elif field in info:
                     if info[field] != binfo[field]:
                         info[field] += '|' + op + '|' + binfo[field]
                 else:
