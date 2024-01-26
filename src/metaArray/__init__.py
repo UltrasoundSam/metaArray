@@ -22,6 +22,7 @@ from metaArray.drv_Tek import isf, DPO2000_csv, TDS2000_csv, DPO2000_isf
 
 # External devices
 from .drv_ritec import Ritec4000
+from .drv_hp4294 import HP4294A
 
 # metaArray aware numerical transforms
 from metaArray.metaTrans import rfft, stfft, cwt
