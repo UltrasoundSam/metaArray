@@ -18,6 +18,7 @@ from .drv_pylab import plot1d, plot2d, plotcomplex, plotcomplexpolar
 
 # File I/O
 from .drv_h5py import to_h5, from_h5
+from metaArray.drv_Tek import isf, DPO2000_csv, TDS2000_csv, DPO2000_isf
 
 # External devices
 from .drv_ritec import Ritec4000

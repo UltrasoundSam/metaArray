@@ -18,7 +18,7 @@ from .misc import filePath
 from .core import metaArray
 
 
-class CSVFile(object):
+class CSVFile:
     """
     CSV file class. Reads CSV files.
 

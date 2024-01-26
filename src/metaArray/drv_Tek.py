@@ -1,42 +1,31 @@
-#       drv_Tek.py
-#
-#       Copyright 2009 charley <y.fan@warwick.ac.uk>
-#
-#       This program is free software; you can redistribute it and/or modify
-#       it under the terms of the GNU General Public License as published by
-#       the Free Software Foundation; either version 2 of the License, or
-#       (at your option) any later version.
-#
-#       This program is distributed in the hope that it will be useful,
-#       but WITHOUT ANY WARRANTY; without even the implied warranty of
-#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#       GNU General Public License for more details.
-#
-#       You should have received a copy of the GNU General Public License
-#       along with this program; if not, write to the Free Software
-#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#       MA 02110-1301, USA.
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 22 2024 15:46
 
-'''
+@author: samhill
+
 This file contain a number of drivers to read the Tek scope output files.
-'''
+"""
 
+import typing
+import numpy.typing as npt
 from operator import itemgetter
 from itertools import groupby
-from numpy import array
+from numpy import array, float_
 from struct import unpack
 from decimal import Decimal
 
 from os import linesep
 
-from metaArray.core import metaArray
-from metaArray.drv_csv import csv_file
-from metaArray.misc import linearChk
-from metaArray.misc import gettypecode
-from metaArray.misc import filePath
-from metaArray.misc import buffered_search
+from .core import metaArray
+from .drv_csv import CSVFile
+from .misc import linearChk
+from .misc import gettypecode
+from .misc import filePath
+from .misc import buffered_search
 
-class isf(object):
+
+class isf:
     """
     Generic isf file/stream interpreter
 
@@ -48,7 +37,7 @@ class isf(object):
     #   ENCDG BIN;
     #   BN_FMT RI;
     #   BYT_OR LSB;
-    #   CH2:WFID "Ch2, AC coupling, 20mVolts/div, 50ns/div, 50000 points, Sample mode";
+    #   CH2:WFID "Ch2, AC coupling, 20mVolts/div, 50ns/div, 50000 points, Sample mode";  # noqa: E501
     #   NR_PT 50000;
     #   PT_FMT Y;
     #   XUNIT "s";
@@ -226,20 +215,18 @@ class isf(object):
     #
     ###########################################################################
     """
-    def __init__(self, path, debug=False, buffer_size=4096):
+    def __init__(self, path: str, debug: bool = False,
+                 buffer_size: int = 4096) -> None:
         """
         4kB buffer size
         """
         self.file_path = filePath(path)
         self.debug = debug
-        self.buffer_size = buffer_size = buffer_size * 1024     # f.read(buffer_size) In case of very large files
+        self.buffer_size = buffer_size = buffer_size * 1024
 
-        self.idx = idx = []     # Index of the records in the file, each item
-                                #      should have the format:
-                                #      [hdr_pos, hdr_len, data_pos, data_len, header_dict, unpack_str]
-
-        #metainfo = self.metainfo = {}                # File header representations
-
+        # Index of records in the file. Each item should have the format:
+        #      [hdr_pos, hdr_len, data_pos, data_len, header_dict, unpack_str]
+        self.idx = idx = []
 
         # Known header fields and value type.
         # This is only used for data type conversion from the byte stream
@@ -255,8 +242,8 @@ class isf(object):
         # ENC or ENCDG -> BIN
         # BN_F or BN_FMT-> RI
         # BYT_O or BYT_OR -> LSB or MSB
-        # CH2:WFID "Ch2, AC coupling, 20mVolts/div, 50ns/div, 50000 points, Sample mode";
-        # WFI "Ch2, DC coupling, 1.000mV/div, 40.00us/div, 1000000 points, Average mode";
+        # CH2:WFID "Ch2, AC coupling, 20mVolts/div, 50ns/div, 50000 points, Sample mode";  # noqa: E501
+        # WFI "Ch2, DC coupling, 1.000mV/div, 40.00us/div, 1000000 points, Average mode";  # noqa: E501
         # PT_F or PT_FMT -> Y
         # XUN or XUNIT -> "s"
         hdr_format.append(['NR_P', int])
@@ -307,38 +294,46 @@ class isf(object):
         while True:
 
             # Find the beginning of the header
-            hdr_start = buffered_search(f, ':WFMP:', start=f_pos, buffer_size=buffer_size)
+            hdr_start = buffered_search(f, ':WFMP:', start=f_pos,
+                                        buffer_size=buffer_size)
             if hdr_start == -1:
-                hdr_start = buffered_search(f, ':WFMPRE:', start=f_pos, buffer_size=buffer_size)
+                hdr_start = buffered_search(f, ':WFMPRE:', start=f_pos,
+                                            buffer_size=buffer_size)
                 if hdr_start == -1:
-                    if debug > 0:
-                        debug_str += 'Neither header descriptors (":WFMP:" or ":WFMPRE:") is found.'
+                    if debug:
+                        debug_str += 'Neither header descriptors (":WFMP:" or ":WFMPRE:") is found.'  # noqa: E501
                         print(debug_str)
-                    break # no more header found
-                elif debug > 0:
-                    debug_str += 'Header descriptor ":WFMPRE:" found at ' + str(hdr_start) + linesep
-            elif debug > 0:
-                debug_str += 'Header descriptor ":WFMP:" found at ' + str(hdr_start) + linesep
+                    break  # no more header found
+                elif debug:
+                    debug_str += f'Header ":WFMPRE:" found at {hdr_start}'
+                    debug_str += linesep
+            elif debug:
+                debug_str += f'Header":WFMP:" found at {hdr_start}'
+                debug_str += linesep
 
             # Find the following data stream
-            data_start = buffered_search(f, ':CURV #', start=hdr_start, buffer_size=buffer_size)
+            data_start = buffered_search(f, ':CURV #', start=hdr_start,
+                                         buffer_size=buffer_size)
             if data_start == -1:
-                data_start = buffered_search(f, ':CURVE #', start=hdr_start, buffer_size=buffer_size)
+                data_start = buffered_search(f, ':CURVE #', start=hdr_start,
+                                             buffer_size=buffer_size)
 
                 if data_start == -1:
                     # Very bad, found header but no data!
                     # Show debug info if requested, ignore otherwise
-                    if debug > 0:
+                    if debug:
                         debug_str += 'Failed to find the following data stream!'
                         print(debug_str)
 
                     f_pos += 6
                     continue
 
-                elif debug > 0:
-                    debug_str += 'Data descriptor ":CURVE #" found at ' + str(data_start) + linesep
+                elif debug:
+                    debug_str += f'Data descriptor ":CURVE #" found at {data_start}'  # noqa: E501
+                    debug_str += linesep
             elif debug > 0:
-                debug_str += 'Data descriptor ":CURV #" found at ' + str(data_start) + linesep
+                debug_str += f'Data descriptor ":CURV #" found at {data_start}'
+                debug_str += linesep
 
             # Work out the length of the data stream is
             # :CURVE #
@@ -351,7 +346,7 @@ class isf(object):
             desc_len = int(buf[pos_x:pos_yyy])                  # <x>
 
             pos_data = pos_yyy + desc_len
-            data_byte_len = int(buf[pos_yyy:pos_data])              # <yyy>
+            data_byte_len = int(buf[pos_yyy:pos_data])          # <yyy>
 
             # Parse the headers
             # Include ":CURV #<x><yyy>" into the header
@@ -362,60 +357,62 @@ class isf(object):
             f.seek(hdr_start)
             hdr_dict = self.proc_header(f.read(hdr_len))
 
-            # Have a quick guess on the unpack string, this is the most rudimentary
-            # information necessary to decode the binary data
+            # Have a quick guess on the unpack string, this is the most
+            # rudimentary information necessary to decode the binary data
             # unpack_str == None if unable to work out from here
             unpack_str = self.get_unpackstr(hdr_dict)
-            if debug > 0:
+            if debug:
                 if unpack_str is None:
-                    debug_str += 'Unable to guess how to unpack the binary data.' + linesep
-                    debug_str += 'Require the knowledge of at least the following header fields:' + linesep
+                    debug_str += 'Unable to guess how to unpack binary data.'
+                    debug_str += linesep
+                    debug_str += 'Require the knowledge of at least the following header fields:' + linesep  # noqa: E501
                     debug_str += '\t BYT_O(R)' + linesep
                     debug_str += '\t NR_P(T)' + linesep
                     debug_str += '\t BIT_N(R)' + linesep
                     debug_str += '\t BN_F(MT)' + linesep
                 else:
-                    debug_str += 'Binary data is thought to be packed as: ' + unpack_str + linesep
+                    debug_str += 'Binary data is thought to be packed as: {unpack_str}'  # noqa: E501
+                    debug_str += linesep
 
             # Assemble into index list
             # idx [hdr_pos, hdr_len, data_pos, data_len, hdr_dict, unpack_str]
-            idx.append([hdr_start, hdr_len, data_start, data_byte_len, hdr_dict, unpack_str])
+            idx.append([hdr_start, hdr_len, data_start, data_byte_len,
+                        hdr_dict, unpack_str])
 
-            # Advance to the end of the data stream, prepare for the next search loop
+            # Advance to the end of the data stream, prepare for
+            # the next search loop
             f_pos = data_start + data_byte_len
 
-            if debug > 0:
-                debug_str += 'Continue searching for the next record from ' + str(f_pos) + ' byte......'
+            if debug:
+                debug_str += f'Continue searching for the next record from {f_pos} byte......'  # noqa: E501
                 print(debug_str)
                 debug_str = ''
 
         f.close()
 
-        return
-
-    def __call__(self):
+    def __call__(self) -> metaArray:
         return self.__getitem__(0)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Return the number of data records in the file
         """
         return int(len(self.idx))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Text representation of the object
         """
         idx = self.idx
 
         desc = "This is a isf file object." + linesep
-        desc += "\tIt has " + str(len(idx)) + " record(s):" + linesep
+        desc += f"\tIt has {len(idx)} record(s):" + linesep
 
         # [header_pos, header_len, data_pos, data_len, unpack_str, header_dir]
         desc += "\tIndex \tType \tdesc " + linesep
-        for i in range(len(idx)):
+        for i, entry in enumerate(idx):
             # [hdr_pos, hdr_len, data_pos, data_len, hdr_dict, unpack_str]
-            hdr_dict = idx[i][4]
+            hdr_dict = entry[4]
 
             # PT_F
             PT_F = '\t'
@@ -444,9 +441,9 @@ class isf(object):
             desc += '=' * 72 + linesep
             desc += 'Detailed record information:' + linesep
 
-            for i in range(len(idx)):
+            for i, entry in enumerate(idx):
                 index_str = "\t" + str(i) + " : "
-                hdr_pos, hdr_len, data_pos, data_len, hdr_dict, unpack_str = idx[i]
+                hdr_pos, hdr_len, data_pos, data_len, hdr_dict, unpack_str = entry  # noqa: E501
 
                 desc += index_str + "Header location: " + str(hdr_pos) + linesep
                 desc += index_str + "Header length: " + str(hdr_len) + linesep
@@ -461,7 +458,7 @@ class isf(object):
 
         return desc.rstrip()
 
-    def open(self):
+    def open(self) -> typing.BinaryIO:
         """
         Open the file for read
         """
@@ -472,8 +469,7 @@ class isf(object):
         except IOError:
             raise IOError("Unable to read file: " + str(self.file_path.full))
 
-
-    def get_unpackstr(self, hdr_dict):
+    def get_unpackstr(self, hdr_dict: dict) -> str:
         """
         Try to do basic guess of the unpack string from the given header
         dictionary.
@@ -492,7 +488,7 @@ class isf(object):
                 ENC = None
 
             if ENC != 'BIN' and ENC != 'BINARY':
-                print('ENC/ENCDG value is expected to be "BIN" or "BINARY", got "' + ENC + '" instead.')
+                print('ENC/ENCDG value is expected to be "BIN" or "BINARY", got "{ENC}" instead.')  # noqa: E501
 
         # Check byte order / endianness
         if hdr_dict.has_key('BYT_O'):
@@ -550,13 +546,12 @@ class isf(object):
 
         try:
             typecode = gettypecode(BYT_N, BN_F)
-        except:
+        except ValueError:
             return None
 
         return endian + str(NR_P) + typecode
 
-
-    def proc_header(self, hdr_str):
+    def proc_header(self, hdr_str: str) -> typing.Union[int, float]:
         """
         Given the header binary read out as string, return header info as dict
         object.
@@ -574,7 +569,8 @@ class isf(object):
         header = dict(header)
 
         # Convert a list of ASCII text values into numbers
-        # It is always safer to convert to float first. int('10000.0') will throw an error
+        # It is always safer to convert to float first.
+        # int('10000.0') will throw an error
         hdr_format = self.hdr_format
 
         for key, dtype in hdr_format:
@@ -582,18 +578,14 @@ class isf(object):
                 header[key] = dtype(Decimal(header[key]))
         return header
 
-
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> metaArray:
         """
         Return metaArray object of the given index item in the file
         """
-
         # sanity check
-        assert type(index) is int, "Given index is not int type: %r" % index
+        assert type(index) is int, f"Given index is not int type: {index}"
 
         idx = self.idx
-        #if index < 0 or index >= len(idx):
-        #    raise IndexError, "Requested index outside range (" + str(len(idx)) + ")."
 
         # [hdr_pos, hdr_len, data_pos, data_len, hdr_dict, unpack_str]
         hdr_pos, hdr_len, data_pos, data_len, hdr_dict, unpack_str = idx[index]
@@ -659,7 +651,6 @@ class isf(object):
         elif hdr_dict.has_key('XUNIT'):
             data.set_range(0, 'unit', hdr_dict['XUNIT'])
 
-
         # WFI
         WFI = None
         if hdr_dict.has_key('WFI'):
@@ -703,10 +694,6 @@ class isf(object):
             XZE = hdr_dict['XZE']
         else:
             XZE = PT_O * -XIN
-        #elif hdr_dict.has_key('PT_OFF'):
-        #    XZE = PT_O * -XIN
-        #else:
-        #    XZE = 0
 
         data.set_range(0, 'begin', XZE)
         data.set_range(0, 'end', XZE + XIN * len(data))
@@ -720,9 +707,10 @@ class isf(object):
         return data
 
 
-class TDS2000_csv(csv_file):
+class TDS2000_csv(CSVFile):
     """
-    The class define the csv file object saved from the Tek TDS2000 series scopes
+    The class define the csv file object saved from the Tek TDS2000
+    series scopes
 
     #
     # TDS2000 series scopes
@@ -754,11 +742,10 @@ class TDS2000_csv(csv_file):
     # ,                 ,                       ,   0.000041720000,   0.00146,
     ###########################################################################
     """
+    def __init__(self, path: str, debug: bool = False) -> None:
 
-    def __init__(self, path, debug=False):
-
-        csv_file.__init__(self, path=path, debug=debug, analyse=False, \
-                            field_delimiter=',', text_delimiter='')
+        CSVFile.__init__(self, path=path, debug=debug, analyse=False,
+                         field_delimiter=',', text_delimiter='')
 
         if debug:
             if self.cols != 6:
@@ -768,19 +755,19 @@ class TDS2000_csv(csv_file):
             model = self.getrow(15)[:2]
             if (model[0] != 'Model Number') or (model[1][:4] != 'TDS2'):
                 print("\t*** Warning, row 15 of the file does not match the \
-                        expected model number description." + linesep + \
-                        "\tExpecting 'Model':'DPO2', got '" + \
-                        model[0] + "':'" + model[1][:4] + "' instead.")
+                      expected model number description." + linesep +
+                      "\tExpecting 'Model':'DPO2', got '" +
+                      model[0] + "':'" + model[1][:4] + "' instead.")
 
-        # Create the metainfo
+        # Create the metainfosv_file
         metainfo = {}
         info_pair = zip(self.getcolumn(0), self.getcolumn(1))
 
         info_pair.sort(key=itemgetter(0))
         for field, value in groupby(info_pair, key=itemgetter(0)):
             val = map(itemgetter(1), value)[0]
-            if field is '':
-                if val is '':
+            if field == '':
+                if val == '':
                     # Blank lines
                     continue
                 # Orphan values
@@ -800,10 +787,10 @@ class TDS2000_csv(csv_file):
         Pformat.append('Yzero')
         Pformat.append('Vertical Offset')
         Pformat.append('Probe Atten')
-        csv_file.update_metainfo(self, Pformat, float)
+        CSVFile.update_metainfo(self, Pformat, float)
 
-        # Although some of the numbers are saved in float representation they really
-        # ought to be int instead.
+        # Although some of the numbers are saved in float representation
+        # they really ought to be int instead.
         #
         # Converting a float ASCII repr directly will caused an error.
         #    >>> int('2.500000e+03')
@@ -818,17 +805,17 @@ class TDS2000_csv(csv_file):
         format_cust = []
         format_cust.append('Record Length')
         format_cust.append('Trigger Point')
-        csv_file.update_metainfo(self, format_cust, int)
+        CSVFile.update_metainfo(self, format_cust, int)
 
         if debug:
             if self.metainfo['Record Length'] != self.rows:
-                print("\t*** Warning, Record Length description (" + str(self.metainfo['Record Length']) \
-                        + ") do not match the number of rows counted (" + str(self.rows) \
-                        + ") in this file. This file maybe corrupted")
+                print("\t*** Warning, Record Length description (" +
+                      str(self.metainfo['Record Length']) +
+                      ") do not match the number of rows counted (" +
+                      str(self.rows) +
+                      ") in this file. This file maybe corrupted")
 
-        return
-
-    def __call__(self):
+    def __call__(self) -> metaArray:
         """
         Return a metaArray when called
         """
@@ -859,7 +846,7 @@ class TDS2000_csv(csv_file):
         ary.update_range()
         return ary
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: int) -> npt.NDArray[float_]:
         """
         Return the requested data as numpy array.
 
@@ -872,24 +859,23 @@ class TDS2000_csv(csv_file):
         elif key == 1:
             return array(self.getcolumn(4), dtype=float)
         else:
-            raise IndexError("The only acceptable key values are 0 and 1, given: " + str(key))
+            raise IndexError(f"The only acceptable key values are 0 and 1, given: {key}")  # noqa: E501
 
-        return
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Text representation of the object
         """
 
         desc = 'This is a TDS2000_csv file object.' + linesep
-        desc += csv_file.__repr__(self)
+        desc += CSVFile.__repr__(self)
 
         return desc
 
 
-class DPO2000_csv(csv_file):
+class DPO2000_csv(CSVFile):
     """
-    The class define the csv file object saved from the Tek DPO2000 series scopes
+    The class define the csv file object saved from the Tek DPO2000
+    series scopes
     #
     # DPO2000 series scopes
     #########################
@@ -922,16 +908,17 @@ class DPO2000_csv(csv_file):
     ###########################################################################
     """
 
-    def __init__(self, path, data_col=1, debug=False):
+    def __init__(self, path: str, data_col: int = 1,
+                 debug: bool = False) -> None:
         """
         data_col option gives the option to choose the data column
         from csv data file if more than one oscilloscope channel is used.
-        Defaults to prior behaviour (i.e. chooses first data column), 
+        Defaults to prior behaviour (i.e. chooses first data column),
         but this can be changed by calling like so:
         DPO2000_csv('/foo/bar/filename.csv', data_col=2)
         """
-        csv_file.__init__(self, path=path, debug=debug, analyse=True, \
-                            field_delimiter=',', text_delimiter='')
+        CSVFile.__init__(self, path=path, debug=debug, analyse=True,
+                         field_delimiter=',', text_delimiter='')
 
         if debug:
             if self.cols != 2:
@@ -941,13 +928,12 @@ class DPO2000_csv(csv_file):
             model = self.getrow(0)[:2]
             if (model[0] != 'Model') or (model[1][:4] != 'DPO2'):
                 print("\t*** Warning, row 0 of the file does not match the \
-                        expected model number description." + linesep + \
-                        "\tExpecting 'Model':'DPO2', got '" + \
-                        model[0] + "':'" + model[1][:4] + "' instead.")
+                      expected model number description." + linesep +
+                      "\tExpecting 'Model':'DPO2', got '" +
+                      model[0] + "':'" + model[1][:4] + "' instead.")
 
             if self.data_start != 16:
-                print("\t*** Warning, Data stream is thought to start at row index" + \
-                        str(self.data_start) + ", instead of the expected 15.")
+                print("\t*** Warning, Data stream is thought to start at row index {self.data_start}, instead of the expected 15.")  # noqa: E501
 
         self.data_col = data_col
         # File headers should be understood by drv_csv already
@@ -962,10 +948,10 @@ class DPO2000_csv(csv_file):
         Pformat.append('Filter Frequency')
         Pformat.append('Vertical Offset')
         Pformat.append('Probe Attenuation')
-        csv_file.update_metainfo(self, Pformat, float)
+        CSVFile.update_metainfo(self, Pformat, float)
 
-        # Although some of the numbers are saved in float representation they really
-        # ought to be int instead.
+        # Although some of the numbers are saved in float representation they
+        # really ought to be int instead.
         #
         # Converting a float ASCII repr directly will caused an error.
         #    >>> int('2.500000e+03')
@@ -980,36 +966,37 @@ class DPO2000_csv(csv_file):
         format_cust = []
         format_cust.append('Record Length')
         format_cust.append('Probe Attenuation')
-        csv_file.update_metainfo(self, format_cust, int)
+        CSVFile.update_metainfo(self, format_cust, int)
 
         if debug:
             if metainfo['Record Length'] != self.rows - self.data_start:
-                print("\t*** Warning, Record Length description (" + str(metainfo['Record Length']) \
-                        + ") do not match the number of rows counted (" + str(self.rows - self.data_start) \
-                        + ") in this file. This file maybe corrupted")
+                print("\t*** Warning, Record Length description (" +
+                      str(metainfo['Record Length']) +
+                      ") do not match the number of rows counted (" +
+                      str(self.rows - self.data_start) +
+                      ") in this file. This file maybe corrupted")
 
         self.metainfo = metainfo
-        return
 
-    def __call__(self):
+    def __call__(self) -> metaArray:
         """
         Return a metaArray when called
         """
         metainfo = self.metainfo
         rcd_len = metainfo['Record Length']
 
-        index = csv_file.getcolumn(self, 0)[self.label_row:]
+        index = CSVFile.getcolumn(self, 0)[self.label_row:]
         index_name = index[0]
         index = array(index[1:rcd_len+1], dtype=float)
 
         try:
-            data = csv_file.getcolumn(self, self.data_col)[self.label_row:]
+            data = CSVFile.getcolumn(self, self.data_col)[self.label_row:]
             metainfo['Source'] = data[0]
             data = array(data[1:rcd_len+1], dtype=float)
         except IndexError as err:
             print("Data column doesn't exist:", err)
             print("Defaulting to first data column")
-            data = csv_file.getcolumn(self, 1)[self.label_row:]
+            data = CSVFile.getcolumn(self, 1)[self.label_row:]
             metainfo['Source'] = data[0]
             data = array(data[1:rcd_len+1], dtype=float)
 
@@ -1021,7 +1008,7 @@ class DPO2000_csv(csv_file):
 
         # Update the basic metaArray info
         ary['unit'] = metainfo['Vertical Units']
-        if metainfo['Label'] is '':
+        if metainfo['Label'] == '':
             ary['name'] = self.name
         else:
             ary['name'] = metainfo['Label']
@@ -1039,13 +1026,13 @@ class DPO2000_csv(csv_file):
         ary.update_range()
         return ary
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Text representation of the object
         """
 
         desc = 'This is a DPO2000_csv file object.' + linesep
-        desc += csv_file.__repr__(self)
+        desc += CSVFile.__repr__(self)
 
         return desc
 
