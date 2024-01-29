@@ -379,8 +379,7 @@ def data_out1_demo() -> str:
     from metaArray.drv_pylab import plot2d
     from matplotlib.pyplot import show, close
 
-    fig, ax = plot2d(ary, size = (10, 5), aspect_ratio = 'xy',
-                     corient='horizontal')
+    fig, ax = plot2d(ary, size = (10, 5), aspect_ratio = 'xy', corient='horizontal')  # noqa: E501
     # fig.savefig('plot2d.png', format='png')
     show()
     close(fig)

@@ -1224,7 +1224,7 @@ class pout_hist(FlexFiles):
         data['range']['label'][0] = 'time'
 
         # Include the rest of the metainfo into metaArray
-        for field, value in desc.iteritems():
+        for field, value in desc.items():
             data["POUT_hist."+field] = value
 
         data[self.fname + '.desc'] = self.title

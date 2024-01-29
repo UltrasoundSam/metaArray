@@ -202,6 +202,7 @@ def plotcomplexpolar(metaAry: metaArray, axis: int = -1,
 
             pticks_lbl.append(f'${val}$')
 
+        ax2.set_yticks(pticks)
         ax2.set_yticklabels(pticks_lbl)
 
     for tl in ax2.get_yticklabels():
@@ -681,6 +682,7 @@ def plot2d(metaAry: metaArray, size: tuple[float, float] = (10, 7.5),
 
         # Add colorbar, make sure to specify tick locations
         # to match desired ticklabels
+        cbar.ax.set_yticks(ticks)
         cbar.ax.set_yticklabels(ticks_lbl)
         cbar.set_label(vlabl, fontsize=fontsize)
 
