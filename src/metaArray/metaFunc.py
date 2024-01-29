@@ -12,11 +12,11 @@ import scipy.signal as ss
 import typing
 import decimal
 
-from metaArray.core import metaArray
-from metaArray.misc import spline_resize
-from metaArray.misc import quantise
-from metaArray.misc import filtfilt
-from metaArray.misc import engUnit
+from .core import metaArray
+from .misc import spline_resize
+from .misc import quantise
+from .misc import filtfilt
+from .misc import eng_unit
 
 ####################
 # Helper functions #
@@ -139,7 +139,7 @@ def meta_lowpass(metAry: metaArray, cut_freq: float,
     Nyquist = ary.get_smp_rate() / 2
 
     # Normalise frequency
-    name_str = 'Low pass filtered at ' + engUnit(cut_freq, unit='Hz', sigfig=3)
+    name_str = 'Low pass filtered at ' + eng_unit(cut_freq, unit='Hz', sigfig=3)
     freq = float(cut_freq) / Nyquist
 
     # Number of taps
@@ -188,7 +188,8 @@ def meta_highpass(metAry: metaArray, cut_freq: float,
     loary = meta_lowpass(metAry, cut_freq, length=length,
                          window=window, copy=True)
 
-    name_str = 'High pass filtered at ' + engUnit(cut_freq, unit='Hz', sigfig=3)
+    name_str = 'High pass filtered at ' + eng_unit(cut_freq,
+                                                   unit='Hz', sigfig=3)
 
     if copy:
         ary = metAry.copy()
