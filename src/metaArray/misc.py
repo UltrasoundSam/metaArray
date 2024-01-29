@@ -1183,7 +1183,7 @@ def timestamp():
 
     '2014-12-15 01:21:05'
     """
-    return datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+    return datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d %H:%M:%S')
 
 
 def datestamp():
@@ -1192,7 +1192,7 @@ def datestamp():
 
     '2014-12-15'
     """
-    return datetime.date.today().strftime('%Y-%m-%d')
+    return datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d')
 
 
 def linear_func(x0: float, y0: float, x1: float,
@@ -1243,7 +1243,7 @@ def exp_func(x0: float, y0: float, x1: float,
 
 
 def linearChk(ary: npt.ArrayLike, axis: int = -1,
-              strict: bool = False) -> typing.Union[True, float]:
+              strict: bool = False) -> typing.Union[bool, float]:
     """
     This will check whether the input array, along the given axis
     (default is a 1-D array) has a equal increments between elements.
@@ -1282,7 +1282,7 @@ def linearChk(ary: npt.ArrayLike, axis: int = -1,
 
 
 def logChk(ary: npt.ArrayLike, axis: int = -1,
-           strict: bool = False) -> typing.Union[True, float]:
+           strict: bool = False) -> typing.Union[bool, float]:
     """
     This will check whether the input array, along the given axis
     (default is a 1-D array) has a equal increments between elements

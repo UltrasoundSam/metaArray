@@ -1266,26 +1266,30 @@ class HP4294A:
         """
         return self.send_cmd(['DCMOD?']).strip().decode()
 
-    def get_dcv(self):
+    def get_dcv(self) -> float:
         """
         DCV <numeric>[V]
         DCV?
-        Sets the dc bias output level when the dc bias output mode is the voltage mode or
-        constant-voltage mode. To set the dc bias output level of each segment when creating the
-        list sweep table, also use this command.)
+        Sets the dc bias output level when the dc bias output mode is the
+        voltage mode or constant-voltage mode. To set the dc bias output level
+        of each segment when creating the list sweep table, also use this
+        command.)
 
         Query the DC bias voltage in the measurement.
         """
         return float(self.send_cmd(['DCV?']).strip())
 
-    def get_dci(self):
+    def get_dci(self) -> float:
         """
         DCI <numeric>[A]
         DCI?
-        Sets the dc bias output level when the dc bias output mode is the current mode or
-        constant-current mode. To set the dc bias output level of each segment when creating the
-        list sweep table, also use this command.
+        Sets the dc bias output level when the dc bias output mode is the
+        current mode or constant-current mode. To set the dc bias output level
+        of each segment when creating the list sweep table, also use this
+        command.
+
         <numeric>
+
         Description
         Output current value of dc bias
         Range
@@ -1298,16 +1302,17 @@ class HP4294A:
         A (ampere)
         Resolution
         20E-6
-        If the specified parameter is out of the allowable setting range, the minimum value (if the
-        lower limit of the range is not reached) or the maximum value (if the upper limit of the
-        range is exceeded) is set.
+        If the specified parameter is out of the allowable setting range,
+        the minimum value (if the lower limit of the range is not reached)
+        or the maximum value (if the upper limit of the range is exceeded)
+        is set.
         {numeric}<newline><^END>
 
         Query the DC bias current in the measurement.
         """
         return float(self.send_cmd(['DCI?']).strip())
 
-    def get_dco(self):
+    def get_dco(self) -> bool:
         """
         DCO {ON|OFF|1|0}
         DCO?
@@ -1315,9 +1320,9 @@ class HP4294A:
 
         Query the DC bias state in the measurement.
         """
-        return int(self.send_cmd(['DCO?']).strip())
+        return bool(self.send_cmd(['DCO?']).strip())
 
-    def eta(self):
+    def eta(self) -> int:
         """
         Based of current instrument settings, try to estimate the time
         required to complete the measurements.
@@ -1326,12 +1331,15 @@ class HP4294A:
         retry = 5
         while True:
             retry -= 1
-            if retry == 0: raise RuntimeError('Unable to obtain sensible frequency sweep values.')
+            if retry == 0:
+                m = 'Unable to obtain sensible frequency sweep values.'
+                raise RuntimeError(m)
 
             f_ary = self.get_sweep_values()
 
             if (f_ary == 0).any():          # Just in case it is not yet ready
-                if self.debug: print('*** Found zeros in frequency sweep values. ' + str(retry) + ' retry attrmpts remaining.')
+                if self.debug:
+                    print(f'*** Found zeros in frequency sweep values. {retry} retry attrmpts remaining.')  # noqa: E501
             else:
                 break
 
@@ -1348,20 +1356,21 @@ class HP4294A:
         elif bw == 5:
             eta = (24.8 / f_ary + 160e-3).sum() + 15
         else:
-            raise ValueError('Unexpected measurement bandwidth setting ' + \
-                             '(' + str(bw) + '), unable to estimate required measurement duration.')
+            raise ValueError('Unexpected measurement bandwidth setting ' +
+                             '(' + str(bw) + '), unable to estimate required measurement duration.')  # noqa: E501
 
-        if self.get_aver() == 1: eta *= self.get_averfact()
+        if self.get_aver() == 1:
+            eta *= self.get_averfact()
 
         return int(round(eta))
 
-    def get_meta_info(self, meta_info={}):
+    def get_meta_info(self, meta_info: dict = {}) -> dict:
         """
         Return generic meta info as dict
         """
 
         meta_info['hp4294a.time'] = timestamp()
-        meta_info['hp4294a.host'] = str(self.host) + ':' + str(self.port)
+        meta_info['hp4294a.host'] = f'{self.host}:{self.port}'
 
         meta_info['hp4294a.*IDN?'] = self.IDN
 
@@ -1389,7 +1398,7 @@ class HP4294A:
 
         return meta_info
 
-    def get_meta_info_freq_sweep(self, meta_info={}):
+    def get_meta_info_freq_sweep(self, meta_info: dict = {}) -> dict:
         """
         Return meta info including frequency sweep specific ones
         """
@@ -1410,8 +1419,10 @@ class HP4294A:
 
         return meta_info
 
-    def meas_impedance(self, start=0.5e6, stop=50e6, resolution=512, \
-                             average=0, bandwidth=1, sweep='LIN', form='FORM3'):
+    def meas_impedance(self, start: float = 0.5e6, stop: float = 50e6,
+                       resolution: int = 512, average: int = 0,
+                       bandwidth: int = 1, sweep: str = 'LIN',
+                       form: str = 'FORM3') -> tuple[metaArray, metaArray]:
         """
         High level function
         impedance
@@ -1420,26 +1431,27 @@ class HP4294A:
         stop            50MHz
         resolution      512 points
         average         Averaging factor (1-256), default to Zero (disabled)
-        bandwidth       Measurement bandwidth (1-5), default to 1 (shortest measurement time)
+        bandwidth       Measurement bandwidth (1-5),
+                        default to 1 (shortest measurement time)
         sweep           Sweep type {LIN|LOG|LIST}, List type is unsupported.
-
         """
-        meas = self.set_meas('IMPH')
+        _ = self.set_meas('IMPH')
 
         self.set_form(form)
 
-        sta, stp, swpt, swpp = self.set_sweep(start=start, stop=stop, swpt=sweep, swpp='FREQ')
+        sta, stp, swpt, swpp = self.set_sweep(start=start, stop=stop,
+                                              swpt=sweep, swpp='FREQ')
 
-        res = self.set_resolution(resolution)
+        _ = self.set_resolution(resolution)
 
-        bw = self.set_bandwidth(bandwidth)
+        _ = self.set_bandwidth(bandwidth)
 
         avg = self.set_average(average)
 
         eta = self.eta()
 
         if eta > (3 * self.timeout):
-            print('Expecting to wait approximately ' + str(eta) + ' seconds to acquire the signal.')
+            print(f'Expecting to wait approximately f{eta} seconds to acquire the signal.')  # noqa: E501
 
         timeout = max(eta*1.25, self.timeout)
 
@@ -1448,8 +1460,8 @@ class HP4294A:
             self.send_cmd(['AVERREST'])
             self.send_cmd(['NUMG ' + str(avg)])
             self.chk_ready(timeout=timeout)
-            #self.send_cmd(['*OPC?'], timeout=timeout)
-            avg_str = ' (' + str(avg) + ' averages)'
+            # self.send_cmd(['*OPC?'], timeout=timeout)
+            avg_str = f' ({avg} averages)'
         else:
             self.send_cmd(['SING'])
             self.chk_ready(timeout=timeout)
@@ -1458,22 +1470,22 @@ class HP4294A:
 
         data_A, data_B, data_sweep = self.get_data_set(form=form)
 
-        #lbl_A, lab_B, unit_A, unit_B = self.meas_dict['IMPH']
+        # lbl_A, lab_B, unit_A, unit_B = self.meas_dict['IMPH']
 
         data_A = metaArray(data_A)
         data_B = metaArray(data_B)
 
         data_A['name'] = 'Reactance measurement' + avg_str
-        data_A['unit'] = 'Ohm'             # unicode(unit_A, encoding='utf-8')
-        data_A['label'] = 'Reactance |Z|'   # unicode(lbl_A, encoding='utf-8')
+        data_A['unit'] = 'Ω'
+        data_A['label'] = 'Reactance |Z|'
         data_A.set_range(0, 'begin', data_sweep[0])
         data_A.set_range(0, 'end', data_sweep[-1])
         data_A.set_range(0, 'unit', 'Hz')
         data_A.set_range(0, 'label', 'Frequency')
 
         data_B['name'] = 'Phase angle measurement' + avg_str
-        data_B['unit'] = 'Degree'           # unicode(unit_B, encoding='utf-8')
-        data_B['label'] = 'Phase angle'     # unicode(lbl_A, encoding='utf-8')
+        data_B['unit'] = '°'
+        data_B['label'] = 'Phase angle'
         data_B.set_range(0, 'begin', data_sweep[0])
         data_B.set_range(0, 'end', data_sweep[-1])
         data_B.set_range(0, 'unit', 'Hz')
