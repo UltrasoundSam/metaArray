@@ -102,7 +102,7 @@ class DemoMenu:
         print(wrapper.fill(self.info))
         print(partition)
 
-        lst = self.items.keys()
+        lst = list(self.items.keys())
         lst.sort()
 
         print('\tOption\tDescription')

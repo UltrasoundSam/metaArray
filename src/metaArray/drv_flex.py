@@ -399,9 +399,9 @@ class FlexFiles:
             # Different fields needs to be unpack differently
             if v_type == 'c':
                 # These are strings, no need to unpack
-                current_entry = record[current_index:next_index]
+                current_entry = record[current_index:next_index].decode()
                 if strip:
-                    current_entry = current_entry.strip().decode()
+                    current_entry = current_entry.strip()
             else:
                 # These are numerical data
                 current_entry = frombuffer(record[current_index:next_index],
@@ -1354,3 +1354,5 @@ class pout_hist(FlexFiles):
             self.rate = smp_rate
         else:
             self.flg_resample = False
+
+        return

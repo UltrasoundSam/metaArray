@@ -144,7 +144,7 @@ class binrecord:
                 file_pos = f.tell()
                 head = f.read(header_len)
 
-                if head == '':
+                if head == b'':
                     # Humm, hit the end of the file, should stop now
                     break
 
