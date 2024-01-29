@@ -65,8 +65,6 @@ class CSVFile:
         self.data_start = 0         # Row number for where data starts
 
         # Check if the file is readable
-        f = self.open()
-
         with open(self.file_path, 'r') as f:
             cols = 0
             f.seek(0)
@@ -285,7 +283,7 @@ class CSVFile:
         info_pair.sort(key=itemgetter(0))
         for k, g in groupby(info_pair, key=itemgetter(0)):
 
-            val = map(itemgetter(1), g)
+            val = list(map(itemgetter(1), g))
             if k == '':
                 if ''.join(val) == '':
                     # Ohh dear, all blanks. Skip the entry.
@@ -312,7 +310,7 @@ class CSVFile:
         """
         metainfo = self.metainfo
         for field in keys:
-            if metainfo.has_key(field):
+            if field in metainfo:
                 try:
                     metainfo[field] = func(metainfo[field])
                 except (ValueError, TypeError):

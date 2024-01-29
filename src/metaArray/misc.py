@@ -860,10 +860,11 @@ def buffered_search(f: typing.IO, string: typing.Union[str, bytes],
     f_pos = start
 
     while True:
+        print(f_pos)
         f.seek(f_pos)
         buf = f.read(buffer_size)
 
-        if buf == '':
+        if buf == b'':
             return -1                           # Reached the end of the file
 
         str_pos = buf.find(string)
@@ -1242,8 +1243,8 @@ def exp_func(x0: float, y0: float, x1: float,
     return lambda x: base ** (k * x + b)
 
 
-def linearChk(ary: npt.ArrayLike, axis: int = -1,
-              strict: bool = False) -> typing.Union[bool, float]:
+def linear_chk(ary: npt.ArrayLike, axis: int = -1,
+               strict: bool = False) -> typing.Union[bool, float]:
     """
     This will check whether the input array, along the given axis
     (default is a 1-D array) has a equal increments between elements.
@@ -1281,8 +1282,8 @@ def linearChk(ary: npt.ArrayLike, axis: int = -1,
             return diff  # Even relaxed rules cant save this one
 
 
-def logChk(ary: npt.ArrayLike, axis: int = -1,
-           strict: bool = False) -> typing.Union[bool, float]:
+def log_chk(ary: npt.ArrayLike, axis: int = -1,
+            strict: bool = False) -> typing.Union[bool, float]:
     """
     This will check whether the input array, along the given axis
     (default is a 1-D array) has a equal increments between elements
@@ -1296,4 +1297,4 @@ def logChk(ary: npt.ArrayLike, axis: int = -1,
     precision than binary representation.
 
     """
-    return linearChk(np.log(ary[axis], strict=strict))
+    return linear_chk(np.log(ary[axis], strict=strict))
