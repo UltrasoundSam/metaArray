@@ -405,7 +405,11 @@ class FlexFiles:
             else:
                 # These are numerical data
                 current_entry = frombuffer(record[current_index:next_index],
-                                           unpack_str)[0]
+                                           dtype=f'{endian}{v_type}',
+                                           count=int(v_length))
+                if v_length == 1:
+                    current_entry = current_entry[0]
+
                 if v_name == 'data':
                     # This is the main data bit, use numpy to unpack directly
                     if type(v_val) is tuple:
