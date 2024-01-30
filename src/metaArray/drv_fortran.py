@@ -1,33 +1,19 @@
-#       drv_fortran.py
-#
-#       Copyright 2009 charley <charley@hosts-137-205-164-145.phys.warwick.ac.uk>
-#
-#       This program is free software; you can redistribute it and/or modify
-#       it under the terms of the GNU General Public License as published by
-#       the Free Software Foundation; either version 2 of the License, or
-#       (at your option) any later version.
-#
-#       This program is distributed in the hope that it will be useful,
-#       but WITHOUT ANY WARRANTY; without even the implied warranty of
-#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#       GNU General Public License for more details.
-#
-#       You should have received a copy of the GNU General Public License
-#       along with this program; if not, write to the Free Software
-#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#       MA 02110-1301, USA.
-'''
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 29 2024 10:03
+
+@author: samhill
+
 This file contains the fortran record object
-'''
+"""
 
 from os import sep, linesep
-from os import access, R_OK
 from struct import unpack, calcsize
 
-from metaArray.misc import filePath
+from .misc import filePath
 
 
-class binrecord(object):
+class binrecord:
     """"
 
     Binary record example
@@ -60,19 +46,21 @@ class binrecord(object):
 
     self.file_path
 
-    self.unpack_str = '<L'          # big-endian (>) or little-endian (<) unsign long
-    self.header_len = 4             # Number of bytes for the record len register
+    self.unpack_str = '<L'          # big-endian (>) or little-endian (<)
+                                    # unsign long
+    self.header_len = 4             # Number of bytes for the record len
+                                    # register
 
-    self.record_pos = 0             # Current record position (i.e. at the Nth record)
+    self.record_pos = 0             # Current record position (i.e. at the
+                                    # Nth record)
 
     self.record_num = 0             # update together # Number of records
     self.record_index = []          # update together #
 
     self.flg_debug = False
-
     """
-
-    def __init__(self, path, debug=False):
+    def __init__(self, path: str,
+                 debug: bool = False) -> None:
 
         self.file_path = filePath(path)
 
@@ -93,40 +81,37 @@ class binrecord(object):
         else:
             # No idea how to unpack the records
             msg = "Can not guess how to unpack the records. " + \
-                    "Please try to specify the following parameters manually: " + sep + \
-                    "'.header_len'" + sep + \
-                    "'.unpack_str'"  + sep + \
-                    "'.endian'"  + sep + \
-                    "then index the file manually using '._index_()'"
+                "Try to specify the following parameters manually: " + sep + \
+                "'.header_len'" + sep + \
+                "'.unpack_str'" + sep + \
+                "'.endian'" + sep + \
+                "then index the file manually using '._index_()'"
             print(msg)
 
         if debug:
-            print'file_path: ', self.file_path.full
+            print('file_path: ', self.file_path.full)
 
-            print'unpack_str: ', self.unpack_str
-            print'header_len: ', self.header_len
+            print('unpack_str: ', self.unpack_str)
+            print('header_len: ', self.header_len)
 
-            print'record_pos: ', self.record_pos
-            print'record_num: ', self.record_num
+            print('record_pos: ', self.record_pos)
+            print('record_num: ', self.record_num)
 
-        return
-
-    def __call__(self):
+    def __call__(self) -> None:
         return self.showIndex()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.record_index)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: int) -> bytes:
         key = self._chk_index(key)
         self.seek(key)
         return self.next()
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         raise NotImplementedError
-        return
 
-    def _chk_index(self, n):
+    def _chk_index(self, n: int) -> int:
         """
         Check the given index value, and do the ring buffer trick
         """
@@ -134,36 +119,34 @@ class binrecord(object):
             n += self.record_num
 
         if n >= self.record_num:
-            raise IndexError("Requested record number: " + str(n) + " outside range. Only " + str(self.record_num) + " record(s) exist")
+            raise IndexError(f"Requested record number: {n} outside range. Only {self.record_num} record(s) exist")  # noqa: E501
 
         return n
 
-
-    def _index_(self):
+    def _index_(self) -> None:
         """
         This is to index the file
 
         Once indexed, file should remain open as binary read
         """
 
-        record_index = [] # Index place holder
+        record_index = []  # Index place holder
 
         header_len = self.header_len
         unpack_str = self.unpack_str
 
-
         # The index operation should stop and return what it found if
         # any exception is raised on the way
 
-        # f = open(self.file_path.full)
         with open(self.file_path.full, 'rb') as f:
 
             while True:
                 file_pos = f.tell()
                 head = f.read(header_len)
 
-                if head == '':
-                    break # Humm, hit the end of the file, should stop now
+                if head == b'':
+                    # Humm, hit the end of the file, should stop now
+                    break
 
                 record_len = unpack(unpack_str, head)[0]
 
@@ -172,7 +155,6 @@ class binrecord(object):
 
                 if head != tail:
                     print("Error, inconsistent record length descriptors")
-                    # print "\tFile position: ", f.tell() - unpack(unpack_str, head)[0] - header_len
                     print("\tInitial file position: ", file_pos)
                     print("\tHead desc: ", unpack(unpack_str, head)[0])
                     print("\tTail desc: ", unpack(unpack_str, tail)[0])
@@ -181,18 +163,13 @@ class binrecord(object):
                     # The index of raw record string will have:
                     # | record begin | record end | raw record len |
                     rawRecLen = record_len + header_len + header_len
-                    record_index.append([file_pos, file_pos + rawRecLen, rawRecLen])
-
-            # f.close()
+                    record_index.append([file_pos, file_pos + rawRecLen,
+                                         rawRecLen])
 
         self.record_index = record_index
         self.record_num = len(self.record_index)
 
-        return None
-
-
-
-    def _parameterChk_(self):
+    def _parameterChk_(self) -> bool:
         """
         Try to guess the following parameters:
 
@@ -202,18 +179,16 @@ class binrecord(object):
         """
         # | Record len (Int) | ... Binary data ... | Record len (Int) |
 
-
         # unpack string of the big and small endian types
-        endian_lst = ['<', '>']
+        endian_lst = ('<', '>')
 
-        # A list of int types to check out. These are type codes in the
+        # A tuple of int types to check out. These are type codes in the
         # struct library.
-        type_lst = ['I', 'L', 'H', 'Q']
+        type_lst = ('I', 'L', 'H', 'Q')
 
-        # f = open(self.file_path.full, 'rb')
         with open(self.file_path.full, 'rb') as f:
 
-            # Read the first 32 bytes of the file into buffer, should
+            # Read the first 64 bytes of the file into buffer, should
             # be enough to cover upto 512bit Int
             buff = f.read(64)
             f.seek(0)
@@ -241,27 +216,23 @@ class binrecord(object):
                         self.unpack_str = endian + dtype
                         self.endian = endian
 
-                        # f.close()
                         return True
 
             # Ran out of things to try
-            # f.close()
             return False
 
-
-    def tell(self):
+    def tell(self) -> int:
         return self.record_pos
 
-    def seek(self, n):
+    def seek(self, n: int) -> None:
         """
         Go to the Nth record
         Similar to f.seek()
         """
         n = self._chk_index(n)
         self.record_pos = n
-        return
 
-    def showIndex(self, N=None):
+    def showIndex(self, N: int = None) -> None:
         """
         Print out the index statistics of the Nth record
         if N not specified, print them all out
@@ -275,26 +246,24 @@ class binrecord(object):
         headers = self.header_len * 2
         record_index = self.record_index
 
-        if N == None:
+        if N is None:
             msg = ''
             for i in range(len(record_index)):
-                msg += 'Record number: ' + str(i) + '\t'
-                msg += 'Length of: ' + str(record_index[i][2] - headers) + ' bytes \t'
-                msg += 'Starting: ' + str(record_index[i][0]) + 'th byte\t'
-                msg += 'Ending: ' + str(record_index[i][1]) + 'th byte\t'
+                msg += f'Record number: {i}\t'
+                msg += f'Length of: {record_index[i][2] - headers} bytes\t'
+                msg += f'Starting: {record_index[i][0]}th byte\t'
+                msg += f'Ending: {record_index[i][1]}th byte\t'
                 msg += linesep
         else:
             N = self._chk_index(N)      # Sanity check
-            msg = 'Record number: ' + str(N) + '\t'
-            msg += 'Length of: ' + str(record_index[N][2] - headers) + ' bytes \t'
-            msg += 'Starting: ' + str(record_index[N][0]) + 'th byte\t'
-            msg += 'Ending: ' + str(record_index[N][1]) + 'th byte\t'
+            msg = f'Record number: {N}\t'
+            msg += f'Length of: {record_index[N][2] - headers} bytes\t'
+            msg += f'Starting: {record_index[N][0]}th byte\t'
+            msg += f'Ending: {record_index[N][1]}th byte\t'
 
         print(msg)
-        return
 
-
-    def item_len(self, key):
+    def item_len(self, key: int) -> int:
         """
         Return the length of an record item, without reading the entire record
         """
@@ -302,92 +271,71 @@ class binrecord(object):
 
         return self.record_index[key][2] - self.header_len * 2
 
-
-    def next(self):
+    def next(self) -> bytes:
         """
         Return the current record, and advance to the next record.
 
-        Return a empty string if file end is reached
+        Return a empty bytearray if file end is reached
         """
-
         return self.read(1)[0]
 
-
-
-    def read(self, N=None):
+    def read(self, N: int = None) -> list[bytes]:
         """
         Retune a number of N records in a tuple
         If N is not specified, return all remaining records
         """
         f = open(self.file_path.full, 'rb')
+        with open(self.file_path.full, 'rb') as f:
+            record_pos = self.record_pos
 
-        record_pos = self.record_pos
+            if N is None:
+                # Read the rest out
+                end_pos = self.record_num
 
-        if N == None:
-            end_pos = self.record_num                       # Read the rest out
+            elif (N + record_pos) > self.record_num:
+                raise IndexError("Requested " + str(N) +
+                                 " records from record index: " +
+                                 str(record_pos) +
+                                 ", but only " +
+                                 str(self.record_num) +
+                                 " record(s) exist")
+            else:
+                end_pos = record_pos + N
 
-        elif (N + record_pos) > self.record_num:
-            raise IndexError("Requested " + str(N) + \
-                            " records from record index: " + str(record_pos) + \
-                            ", but only " + str(self.record_num) + " record(s) exist")
-        else:
-            end_pos = record_pos + N
+            header_len = self.header_len
+            record_index = self.record_index
+            output = []
 
+            for pos in range(record_pos, end_pos):
 
-        header_len = self.header_len
-        record_index = self.record_index
-        output = []
+                rcd_begin, rcd_end, rcd_len = record_index[pos]
 
-        for pos in range(record_pos, end_pos):
+                # Where the raw record starts
+                f.seek(rcd_begin)
 
-            rcd_begin, rcd_end, rcd_len = record_index[pos]
+                # Read the raw record
+                raw_record = f.read(rcd_len)
 
-            f.seek(rcd_begin)                     # Where the raw record starts
-            raw_record = f.read(rcd_len)          # Read the raw record
+                output.append(raw_record[header_len:-header_len])
 
-            output.append(raw_record[header_len:-header_len])
-
-        f.close()
         return output
 
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Text representation of the object
         """
 
-        idx = self.record_index
-
         desc = "This is a Fortran binary record object."
-        desc += "\tIt has " + str(len(self.record_index)) + " record(s):" + linesep
-        desc += "Use the .showIndex() method to obtain a detailed list of records"
-
-        #for i in range(len(idx)):
-            #index_str = "\t" + str(i) + " : "
-            #hdr_pos, hdr_len, data_pos, data_len, hdr_dict, unpack_str = idx[i]
-
-            #desc += index_str + "File location: " + str(hdr_pos) + linesep
-            #desc += index_str + "Fortran header length: " + str(self.header_len) + linesep
-            #desc += index_str + "Unpack string: " + self.unpack_str + linesep
-
-            #for key, val in hdr_dict.iteritems():
-                #desc += index_str + '[' + key + '] ' + str(val) + linesep
-
-            #desc += linesep
-            #desc += "Use the .showIndex() method to obtain a detailed list of records"
-            #desc += linesep
-
+        desc += f"\tIt has {len(self)} record(s):" + linesep
+        desc += "Use the .showIndex() method to obtain a detailed list of records"  # noqa: E501
 
         return desc
 
-
-    def write(self, file_path):
+    def write(self, file_path) -> None:
         raise NotImplementedError
-        return
 
-    def append(self, file_path):
+    def append(self, file_path) -> None:
         raise NotImplementedError
-        return
 
 
 class NoOverlapError(IndexError):

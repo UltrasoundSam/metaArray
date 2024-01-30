@@ -1,35 +1,17 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-#  RitecController.py
-#
-#  Copyright 2016 Sam Hill <samuel.hill@warwick.ac.uk>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#  MA 02110-1301, USA.
-#
-#pylint: disable=too-many-instance-attributes, too-many-public-methods
-# Lots of control parameters for Ritec, so need to control them all!
 """
+Created on Mon Jan 26 2024 14:05
+
+@author: samhill
+
 Control Class for Ritec Rpr4000 Ultrasonic Pulser-Receiver
 """
 
 import serial
 import time
 
-class Ritec4000(object):
+
+class Ritec4000:
     """
     RitecRpr4000    Control class for the RITEC RPR4000 unit.
     Simplifies external PC control for the RITEC RPR4000 unit,
@@ -69,7 +51,8 @@ class Ritec4000(object):
     connection and unlock Ritec keypad.
     """
 
-    def __init__(self, port, timeout=0.1, retries=2):
+    def __init__(self, port: str, timeout: float = 0.1,
+                 retries: int = 2) -> None:
         """
         Intiates connection with Ritec over serial port
         Inputs:
@@ -85,18 +68,18 @@ class Ritec4000(object):
 
         # Open up the serial port and connect to Ritec
         try:
-            #Connect to self.serial_port
-            self.serial_port = serial.Serial(\
-                                port=self.port, \
-                                baudrate=57600, \
-                                timeout=timeout, \
-                                rtscts=True)
+            # Connect to self.serial_port
+            self.serial_port = serial.Serial(port=self.port,
+                                             baudrate=57600,
+                                             timeout=timeout,
+                                             rtscts=True)
             self.connected = True
         except serial.serialutil.SerialException:
             # Not a valid port number
             print('Not a valid serial port - check available ports')
 
-        self.serial_port.flushInput()	# Clear input buffer
+        # Clear input buffer
+        self.serial_port.flushInput()
 
         # Getting current settings from Ritec
         initial_settings = self.get_settings()
@@ -122,7 +105,7 @@ class Ritec4000(object):
         # For some reason, Ritec never accepts first freq command - send it now
         self.serial_port.write('FR:00.500000\r')
 
-    def __del__(self):
+    def __del__(self) -> None:
         """
         Destructor for Ritec control object. I know this is a bad idea
         but need to make sure that front panel is unlocked ('KU:') if Python
@@ -130,27 +113,25 @@ class Ritec4000(object):
         """
         self.disconnect()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Text representation of object
         """
-        desc = (' This is a Ritec RPR-4000 control object ' \
-        'connected on port {0}\n'.format(self.port) + 72 * '=')
+        desc = ' This is a Ritec RPR-4000 control object '
+        desc += f'connected on port {self.port}'
+        desc += 72 * '='
 
-        desc += ('\n\tFrequency:\t{0:09.6f} MHz\t' \
-                 'Cycles:\t{1:04d}\n'.format(self.frequency, self.cycles))
+        desc += f'\n\tFrequency:\t{self.frequency:09.6f} MHz\tCycles:\t{self.cycles:04d}\n'  # noqa: E501
 
-        desc += ('\tControl Level:\t{0:03d}\t\t' \
-                 'Gain:\t{1:04.1f} dB\n'.format(self.control, self.gain))
+        desc += f'\tControl Level:\t{self.control:03d}\t\tGain:\t{self.gain:04.1f} dB\n'  # noqa: E501
 
-        desc += ('\tActive Channel:\t{0}\t\t' \
-                 'RepRate:{1:09.3f} Hz\n'.format(self.channel, self.rep_rate))
+        desc += f'\tActive Channel:\t{self.channel}\t\tRepRate:{self.rep_rate:09.3f} Hz\n'  # noqa: E501
 
         desc += 72 * '='
 
         return desc
 
-    def _set_parameter(self, cmd):
+    def _set_parameter(self, cmd: str) -> bool:
         """
         Sets a parameter and sends it to the Ritec - Not meant to be
         used directly by user.
@@ -163,9 +144,12 @@ class Ritec4000(object):
         # Checking overvoltage condition before getting parameters
         self.overvolt = self.overvolt_check()
 
+        # Change cmd into bytes
+        cmd = cmd.encode('utf-8')
+
         result = False
         # Attempt to send parameter change self.Retries times
-        for _ in xrange(self.retries):
+        for _ in range(self.retries):
             try:
                 self.serial_port.write(cmd + '\r')
                 result = True
@@ -178,7 +162,7 @@ class Ritec4000(object):
                 break
         return result
 
-    def _get_parameter(self, cmd):
+    def _get_parameter(self, cmd: str) -> str:
         """
         Method for getting desired value from the values of Ritec value -
         - Not meant to be used directly by user.
@@ -192,8 +176,11 @@ class Ritec4000(object):
         # Checking overvoltage condition before getting parameters
         self.overvolt = self.overvolt_check()
 
+        # Convert command to bytes
+        cmd = cmd.encode('utf-8')
+
         # Will attempt to get parameter self.Retries times
-        for _ in xrange(self.retries):
+        for _ in range(self.retries):
             try:
                 self.serial_port.write(cmd + '\r')
                 time.sleep(0.5)
@@ -206,9 +193,9 @@ class Ritec4000(object):
                 data = self.serial_port.read(16)
 
         self.serial_port.flushInput()
-        return data.strip('\r')
+        return data.strip(b'\r').decode('utf-8')
 
-    def connect(self):
+    def connect(self) -> None:
         """
         Connects the serial port connection to Ritec
         """
@@ -219,7 +206,7 @@ class Ritec4000(object):
         except serial.serialutil.SerialException:
             print('Serial connection to Ritec is already open')
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         """
         Disconnects the serial connection to Ritec
         """
@@ -227,7 +214,7 @@ class Ritec4000(object):
         self.serial_port.close()
         self.connected = False
 
-    def power_down(self):
+    def power_down(self) -> None:
         """
         Powers down the Ritec by setting control setting
         to 0 after setting tracking to 'Y'.
@@ -235,7 +222,7 @@ class Ritec4000(object):
         self.set_tracking('Y')
         self.set_control(0)
 
-    def overvolt_check(self):
+    def overvolt_check(self) -> bool:
         """
         Checks to see whether Ritec is in overvoltage condition.
         If it is overvolting, the unit is powered down.
@@ -249,7 +236,7 @@ class Ritec4000(object):
                 result = True
         return result
 
-    def defaults(self):
+    def defaults(self) -> None:
         """
         Sets Ritec to known, safe default values
         """
@@ -268,7 +255,7 @@ class Ritec4000(object):
         self.set_lpfilter(1, channel='1')
         self.set_keypad('KU:')
 
-    def get_settings(self):
+    def get_settings(self) -> dict:
         """
         Get the current Ritec setting and returning them in a dict
         """
@@ -287,13 +274,13 @@ class Ritec4000(object):
         settings['Burst Peak Voltage'] = self.get_bpv()
         return settings
 
-    def set_keypad(self, value):
+    def set_keypad(self, value: str) -> None:
         """
         Changes the value of Keypad lock
         Input:
             value:                  String; KU; for unlock, or KL: for lock
         """
-        if not value in ['KU:', 'KL:']:
+        if value not in ['KU:', 'KL:']:
             print('Not a valid Keypad option; either KU: or KL:')
             return
 
@@ -303,7 +290,7 @@ class Ritec4000(object):
         if not result:
             print('Ritec Parameter update was not successful!')
 
-    def get_keypad(self):
+    def get_keypad(self) -> str:
         """
         Gets the current state of the keypad - either locked or unlocked
         """
@@ -314,7 +301,7 @@ class Ritec4000(object):
             result = float('nan')
             print('Request failure: could not request Keypad value')
 
-    def set_frequency(self, value):
+    def set_frequency(self, value: float) -> None:
         """
         Changes the value of the excitation frequency
         Input:
@@ -326,7 +313,7 @@ class Ritec4000(object):
             print('Frequency not in valid range')
             return
 
-        cmd = 'FR:{0:09.6f}'.format(value)  # Format value to has correct form
+        cmd = f'FR:{value:09.6f}'           # Format value to has correct form
         result = self._set_parameter(cmd)   # Send command to change value
 
         if not result:
@@ -335,13 +322,13 @@ class Ritec4000(object):
         # Assign new set frequency to object parameters
         self.frequency = self.get_frequency()
 
-    def get_frequency(self):
+    def get_frequency(self) -> float:
         """
         Gets the current value of the excitation frequency
         """
         result = self._get_parameter('FR:?')
         # Sanity check the result
-        if (result[:3] == 'FR:') and (len(result) == 12):
+        if (result.startswith('FR:')) and (len(result) == 12):
             freq = float(result[3:])
             self.frequency = freq
         else:
@@ -350,7 +337,7 @@ class Ritec4000(object):
 
         return freq
 
-    def set_cycles(self, value):
+    def set_cycles(self, value: int) -> None:
         """
         Changes the number of cycles in excitation signal
         Input:
@@ -362,7 +349,7 @@ class Ritec4000(object):
             print('Number of cycles not in valid range')
             return
 
-        cmd = 'CY:{0:04d}'.format(value)    # Format value to has correct form
+        cmd = f'CY:{value:04d}'             # Format value to has correct form
         result = self._set_parameter(cmd)   # Send command to change value
 
         if not result:
@@ -371,13 +358,13 @@ class Ritec4000(object):
         # Assign new set cycles to object parameters
         self.cycles = self.get_cycles()
 
-    def get_cycles(self):
+    def get_cycles(self) -> int:
         """
         Gets the current value of the number of cycles
         """
         result = self._get_parameter('CY:?')
         # Sanity check the result
-        if (result[:3] == 'CY:') and (len(result) == 7):
+        if (result.startswith('CY:')) and (len(result) == 7):
             cycle = int(result[3:])
             self.cycles = cycle
         else:
@@ -386,13 +373,13 @@ class Ritec4000(object):
 
         return cycle
 
-    def set_mode(self, value):
+    def set_mode(self, value: str) -> None:
         """
         Changes the console update mode
         Input:                    'UP:' (Update) or 'PS:' (Passthrough) mode
         """
         # Check if valid input
-        if not value in ['UP:', 'PS:']:
+        if value not in ['UP:', 'PS:']:
             print('Console update parameter not in valid range')
             return
 
@@ -405,7 +392,7 @@ class Ritec4000(object):
         # Assign new set cycles to object parameters
         self.mode = self.get_mode()
 
-    def get_mode(self):
+    def get_mode(self) -> str:
         """
         Gets current consol update mode
         """
@@ -420,17 +407,17 @@ class Ritec4000(object):
 
         return mode
 
-    def set_tracking(self, value):
+    def set_tracking(self, value: str) -> None:
         """
         Sets automatic or manual control of RF gain and bias level
         Input:                    'Y' (automatic) or 'N' (manual)
         """
         # Check if valid input
-        if not value in ['Y', 'N']:
+        if value not in ['Y', 'N']:
             print('Tracking parameter not in valid range')
             return
 
-        cmd = 'TK:{0}'.format(value)
+        cmd = 'TK:{value}'
         result = self._set_parameter(cmd)
 
         if not result:
@@ -439,13 +426,13 @@ class Ritec4000(object):
         # Assign new set tracking to object parameters
         self.tracking = self.get_tracking()
 
-    def get_tracking(self):
+    def get_tracking(self) -> str:
         """
         Gets current tracking mode
         """
         result = self._get_parameter('TK:?')
         # Sanity check the result
-        if (result[:3] == 'TK:') and (len(result) == 4):
+        if (result.startswith('TK:')) and (len(result) == 4):
             track = str(result[3])
             self.tracking = track
         else:
@@ -454,22 +441,22 @@ class Ritec4000(object):
 
         return track
 
-    def set_control(self, value):
+    def set_control(self, value: int) -> None:
         """
         Sets control level for Ritec pulser amplitude level
         Input:                    Control level between 0 and 100 (int)
         """
         # Check that tracking is set to 'Y', else can't set control
-        if self.tracking is not 'Y':
+        if self.tracking != 'Y':
             print('Tracking is not set to "Y" - cannot set control level')
             return
 
-        # Check if valid inputhttp://www.bbc.co.uk/news/world-us-canada-35829477
+        # Check if valid input
         if not 0 <= value <= 100:
             print('Control level parameter not in valid range')
             return
 
-        cmd = 'CO:{0:03d}'.format(int(value))
+        cmd = f'CO:{int(value):03d}'
         result = self._set_parameter(cmd)
 
         if not result:
@@ -478,13 +465,13 @@ class Ritec4000(object):
         # Assign new set control level to object parameters
         self.control = self.get_control()
 
-    def get_control(self):
+    def get_control(self) -> int:
         """
         Gets current control level
         """
         result = self._get_parameter('CO:?')
         # Sanity check the result
-        if (result[:3] == 'CO:') and (len(result) == 6):
+        if (result.startswith('CO:')) and (len(result) == 6):
             control = int(result[3:])
             self.control = control
         else:
@@ -493,17 +480,17 @@ class Ritec4000(object):
 
         return control
 
-    def set_trigger(self, value):
+    def set_trigger(self, value: str) -> None:
         """
         Sets the trigger method for Ritec pulser - either internal or external
         Input:                    'I' (Internal), 'E' (External) or 'C' (RS232)
         """
         # Check if valid input
-        if not value in ['I', 'E', 'C']:
+        if value not in ['I', 'E', 'C']:
             print('Trigger parameter not in valid range')
             return
 
-        cmd = 'TG:{0}'.format(value)
+        cmd = f'TG:{value}'
         result = self._set_parameter(cmd)
 
         if not result:
@@ -512,13 +499,13 @@ class Ritec4000(object):
         # Assign new set trigger to object parameters
         self.trigger = self.get_trigger()
 
-    def get_trigger(self):
+    def get_trigger(self) -> str:
         """
         Gets current Trigger setting
         """
         result = self._get_parameter('TG:?')
         # Sanity check the result
-        if (result[:3] == 'TG:') and (len(result) == 6):
+        if (result.startswith('TG:')) and (len(result) == 6):
             trig = str(result[3:])
             self.trigger = trig
         else:
@@ -527,7 +514,7 @@ class Ritec4000(object):
 
         return trig
 
-    def set_reprate(self, value):
+    def set_reprate(self, value: float) -> None:
         """
         Sets the repetition rate of the Ritec
         Input:                Repetition rate in Hz (0.08 - 10000 Hz)
@@ -537,7 +524,7 @@ class Ritec4000(object):
             print('RepRate parameter not in valid range')
             return
 
-        cmd = 'RR:{0:09.3f}'.format(value)
+        cmd = f'RR:{value:09.3f}'
         result = self._set_parameter(cmd)
 
         if not result:
@@ -546,13 +533,13 @@ class Ritec4000(object):
         # Assign new set trigger to object parameters
         self.rep_rate = self.get_reprate()
 
-    def get_reprate(self):
+    def get_reprate(self) -> float:
         """
         Gets current Trigger setting
         """
         result = self._get_parameter('RR:?')
         # Sanity check the result
-        if (result[:3] == 'RR:') and (len(result) == 12):
+        if (result.startswith('RR:')) and (len(result) == 12):
             rep = float(result[3:])
             self.rep_rate = rep
         else:
@@ -561,18 +548,18 @@ class Ritec4000(object):
 
         return rep
 
-    def set_channel(self, value):
+    def set_channel(self, value: str) -> None:
         """
         Sets the active receiver input channel
         Input:                    Enter desired channel: '1', '2', or
                                   'A' (for alternating channels)
         """
         # Check if valid input
-        if not value in ['1', '2', 'A']:
+        if value not in ['1', '2', 'A']:
             print('Channel parameter not in valid range')
             return
 
-        cmd = 'IN:{0}'.format(value)
+        cmd = f'IN:{value}'
         result = self._set_parameter(cmd)
 
         if not result:
@@ -581,13 +568,13 @@ class Ritec4000(object):
         # Assign new set trigger to object parameters
         self.channel = self.get_channel()
 
-    def get_channel(self):
+    def get_channel(self) -> str:
         """
         Gets current active channel
         """
         result = self._get_parameter('IN:?')
         # Sanity check the result
-        if (result[:3] == 'IN:') and (len(result) == 4):
+        if (result.startswith('IN:')) and (len(result) == 4):
             channel = str(result[3])
             self.channel = channel
         else:
@@ -596,7 +583,8 @@ class Ritec4000(object):
 
         return channel
 
-    def set_gain(self, value, channel=None):
+    def set_gain(self, value: float,
+                 channel: str = None) -> None:
         """
         Sets the amplifier gain value on a desired channel
         Inputs:
@@ -613,7 +601,7 @@ class Ritec4000(object):
             channel = self.channel
 
         # If channel is 'A', need to apply it to each channel separately
-        if channel is 'A':
+        if channel == 'A':
             self.set_gain(value, channel='1')
             self.set_gain(value, channel='2')
             self.set_channel('A')
@@ -621,7 +609,7 @@ class Ritec4000(object):
 
         # Change active channel to the one requested
         self.set_channel(channel)
-        cmd = 'GA:{0:04.1f}'.format(value)
+        cmd = f'GA:{value:04.1f}'
         result = self._set_parameter(cmd)
 
         if not result:
@@ -630,13 +618,13 @@ class Ritec4000(object):
         # Assign new set trigger to object parameters
         self.gain = self.get_gain()
 
-    def get_gain(self):
+    def get_gain(self) -> float:
         """"
         Gets amplifier gain of current active channel
         """
         result = self._get_parameter('GA:?')
         # Sanity check the result
-        if (result[:3] == 'GA:') and (len(result) == 7):
+        if (result.startswith('GA:')) and (len(result) == 7):
             gain = float(result[3:])
             self.gain = gain
         else:
@@ -645,7 +633,7 @@ class Ritec4000(object):
 
         return gain
 
-    def set_hpfilter(self, value, channel=None):
+    def set_hpfilter(self, value: int, channel: str = None) -> None:
         """
         Set High Pass Filter value on desired channel
         Input:
@@ -656,7 +644,7 @@ class Ritec4000(object):
                                   to active channel.
         """
         # Check that input is valid
-        if not value in range(1, 5):
+        if value not in range(1, 5):
             print('HP Filter setting not in valid range')
             return
 
@@ -666,7 +654,7 @@ class Ritec4000(object):
 
         # Change active channel to the one requested
         self.set_channel(channel)
-        cmd = 'HF:{0:1d}'.format(int(value))
+        cmd = f'HF:{int(value):1d}'
         result = self._set_parameter(cmd)
 
         if not result:
@@ -675,13 +663,13 @@ class Ritec4000(object):
         # Assign new set trigger to object parameters
         self.hp_filter = self.get_hpfilter()
 
-    def get_hpfilter(self):
+    def get_hpfilter(self) -> str:
         """
         Gets HP Filter setting on active channel
         """
         result = self._get_parameter('HF:?')
         # Sanity check the result
-        if (result[:3] == 'HF:'):
+        if result.startswith('HF:'):
             hpf = str(result[3:])
             self.hp_filter = hpf
         else:
@@ -690,7 +678,7 @@ class Ritec4000(object):
 
         return hpf
 
-    def set_lpfilter(self, value, channel=None):
+    def set_lpfilter(self, value: int, channel: str = None) -> None:
         """
         Set Low Pass Filter value on desired channel
         Input:
@@ -701,7 +689,7 @@ class Ritec4000(object):
                                   to active channel.
         """
         # Check that input is valid
-        if not value in range(1, 5):
+        if value not in range(1, 5):
             print('LP Filter setting not in valid range')
             return
 
@@ -711,7 +699,7 @@ class Ritec4000(object):
 
         # Change active channel to the one requested
         self.set_channel(channel)
-        cmd = 'LF:{0:1d}'.format(int(value))
+        cmd = f'LF:{int(value):1d}'
         result = self._set_parameter(cmd)
 
         if not result:
@@ -720,13 +708,13 @@ class Ritec4000(object):
         # Assign new set trigger to object parameters
         self.lp_filter = self.get_lpfilter()
 
-    def get_lpfilter(self):
+    def get_lpfilter(self) -> str:
         """
         Gets LP Filter setting on active channel
         """
         result = self._get_parameter('LF:?')
         # Sanity check the result
-        if (result[:3] == 'LF:'):
+        if result.startswith('LF:'):
             lpf = str(result[3:])
             self.lp_filter = lpf
         else:
@@ -735,13 +723,13 @@ class Ritec4000(object):
 
         return lpf
 
-    def get_bpv(self):
+    def get_bpv(self) -> float:
         """
         Gets Burst Peak Voltage from Ritec
         """
         result = self._get_parameter('BV:?')
         # Sanity check the result
-        if (result[:3] == 'BV:') and (len(result) == 8):
+        if (result.startswith('BV:')) and (len(result) == 8):
             bpv = float(result[3:])
             self.burst_peak_voltage = bpv
         else:
@@ -755,10 +743,10 @@ class Ritec4000(object):
         Sends a Trigger pulse if the Trigger setting is set to 'C' for
         computer control trigger setting.
         """
-        #if self.trigger == 'XPC':
-            #result = self._set_parameter('CT:')
-            #if not result:
-                #print('Trigger pulse was unsuccessful')
-        #else:
-            #print('Trigger setting is not set to "C"')
+        # if self.trigger == 'XPC':
+        #    result = self._set_parameter('CT:')
+        #    if not result:
+        #        print('Trigger pulse was unsuccessful')
+        # else:
+        #    print('Trigger setting is not set to "C"')
         pass

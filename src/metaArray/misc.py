@@ -1,37 +1,21 @@
-#       This program is free software; you can redistribute it and/or modify
-#       it under the terms of the GNU General Public License as published by
-#       the Free Software Foundation; either version 2 of the License, or
-#       (at your option) any later version.
-#
-#       This program is distributed in the hope that it will be useful,
-#       but WITHOUT ANY WARRANTY; without even the implied warranty of
-#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#       GNU General Public License for more details.
-#
-#       You should have received a copy of the GNU General Public License
-#       along with this program; if not, write to the Free Software
-#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#       MA 02110-1301, USA.
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 25 2023 10:52
 
-'''
-This file contain a number a miscellaneous functions
+@author: samhill
 
-linearChk     Check the input array is linear
-unitPrefix    Calculate the unit prefix.
+File for controlling csv file reading
+"""
 
-Package dependency:
- PIL
- numpy
- scipy
-'''
-
-import decimal
-import struct
-import time
-import datetime
-import os
 import numpy as np
 import scipy as sp
+import numpy.typing as npt
+import typing
+import decimal
+import struct
+import datetime
+import os
+
 from scipy.signal import filtfilt as scipy_filtfilt
 
 from metaArray.constants import GaussFWHM
@@ -52,7 +36,7 @@ class InsufficientInput(ValueError):
     pass
 
 
-class dirPath(object):
+class dirPath:
     """
     DirPath object, provide various information about the dir path
 
@@ -65,16 +49,15 @@ class dirPath(object):
     self.exist      Whether it already exists
     """
 
-    def __init__(self, path):
+    def __init__(self, path: str) -> None:
 
         self.full = path = os.path.abspath(path.strip())
         self.name = os.path.basename(path)
         self.read = os.access(path, os.R_OK)
         self.write = os.access(path, os.W_OK)
         self.exist = os.access(path, os.F_OK)
-        return
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Text representation of the object
         """
@@ -88,7 +71,7 @@ class dirPath(object):
         return desc
 
 
-class filePath(object):
+class filePath:
     """
     FilePath object, provide various information about the file path
 
@@ -103,15 +86,13 @@ class filePath(object):
     self.exist      Whether it already exists
     """
 
-    def __init__(self, file_path):
+    def __init__(self, file_path: str) -> None:
 
         self.full = path = os.path.abspath(file_path.strip())
         self.read = os.access(path, os.R_OK)
         self.write = os.access(path, os.W_OK)
         self.execute = os.access(path, os.X_OK)
         self.exist = os.access(path, os.F_OK)
-
-        # self.baseDir = basename(path[:path.rfind(sep)])
         self.baseDir, fname = os.path.split(path)
 
         # Modify the behaviour if the file does not exit, check if the directory
@@ -119,13 +100,9 @@ class filePath(object):
         if not self.exist:
             self.write = os.access(self.baseDir, os.W_OK)
 
-        self.name = fname[:fname.rfind('.')]
-        self.ext = fname[fname.rfind('.')+1:]
+        self.name, self.ext = os.path.splitext(fname)
 
-        return
-
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Text representation of the object
         """
@@ -142,15 +119,17 @@ class filePath(object):
         return desc
 
 
-class cplx_trig_func(object):
+class cplx_trig_func:
     """
     A complex trigonometic function object.
 
     Not all input variables needs be defined, it will try to work them out.
     """
 
-    def __init__(self, nLambda=False, pts=False, debug=False, \
-        length=False, freq=False, samp_rate=False, dt=False):
+    def __init__(self, nLambda: float = False, pts: int = False,
+                 debug: bool = False, length: float = False,
+                 freq: float = False, samp_rate: float = False,
+                 dt: float = False) -> None:
 
         # Externally defined variables
         # Tier 1
@@ -173,9 +152,7 @@ class cplx_trig_func(object):
         # Private vars
         self.flg_resolved = False
 
-        return
-
-    def __call__(self):
+    def __call__(self) -> npt.NDArray[np.complex_]:
         """
         Retrun the complex trigonometic oscillation function
         """
@@ -189,124 +166,12 @@ class cplx_trig_func(object):
 
         return np.exp(1j*self.x)
 
-    def get_radian_space(self):
-        """
-        Return the radian space array of the complex trigonometic oscillation object.
-        """
-        # Try to reolve all the parameters from given data
-        self.resolve()
-
-        if self.x is not None:
-            x = np.linspace(0, self.nLambda*2*np.pi, self.pts)
-            self.x = x
-            self.dx = x[1]
-
-        return x
-
-    def resolve(self):
-        """
-        Try to reolve all the parameters from given data
-        """
-
-        if self.flg_resolved:
-            return          # Already resolved
-
-        # Tier 1
-        nLambda = self.nLambda
-        pts = self.pts
-        debug = self.debug
-        # Tier 2
-        length = self.length
-        freq = self.freq
-        # Tier 3
-        samp_rate = self.samp_rate
-        dt = self.dt
-
-        # Identify Tier 1 Variables
-        if pts == False:
-            # pts can be obtain from (length x samp_rate) or (length / dt)
-            # Need length in either case
-            if length == False:
-                # length can be obtained from (nLambda * freq)
-                if (nLambda == False) or (freq == False):
-                    raise InsufficientInput("nLambda (number of wavelengths) and freq (frequency) are needed to define length (duration)")
-                else:
-                    length = float(nLambda) / float(freq)
-
-            # length is now identified
-            if samp_rate is not False:
-                pts = float(length) * float(samp_rate)
-            elif dt is not False:
-                pts = float(length) / float(dt)
-            else:
-                raise InsufficientInput("Either samp_rate (sampling rate) or dt (sampling interval) is needed to define pts (number of points)")
-
-
-        # Identify Tier 1 variables
-        if nLambda == False:
-            # nLambda can be obtained from (length*freq)
-            if freq == False:
-                raise InsufficientInput("freq (frequency) is needed to define nLambda (number of wavelengths)")
-
-            if length == False:
-                # length can be obtained from (pts * dt) or (pts / samp_rate)
-                # Need pts in either case
-                if pts == False:
-                    raise InsufficientInput("pts (number of points) is needed to define length (duration)")
-
-                if dt is not False:
-                    length = int(np.round(pts)) * float(dt)
-                elif samp_rate is not False:
-                    length = int(np.round(pts)) / float(samp_rate)
-                else:
-                    raise InsufficientInput("Either samp_rate (sampling rate) or dt (sampling interval) is needed to define length (duration)")
-
-            nLambda = float(length) * float(freq)
-
-        # All the Tier 1 variables are solved
-        # Solve the rest of the variables
-        if length == False:
-            if freq is not False:
-                length = nLambda / freq
-            elif dt is not False:
-                length = pts * dt
-            elif samp_rate is not False:
-                length = pts / samp_rate
-            elif debug:
-                print('*** Unable to resolve Tier 2 variable length')
-
-        if freq == False:
-            if length is not False:
-                freq = nLambda / length
-            elif debug:
-                print('*** Unable to resolve Tier 2 variable freq')
-
-        if samp_rate == False:
-            if length is not False:
-                samp_rate = pts / length
-
-        if dt == False:
-            if length is not False:
-                dt = length / pts
-
-        # Write the variables back to the object
-        self.nLambda = nLambda
-        self.freq = freq
-        self.pts = pts
-        self.length = length
-        self.samp_rate = samp_rate
-        self.dt = dt
-
-        # Indicate all necessary variables has been resolved
-        self.flg_resolved = True
-
-        return
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Text representation of the object
         """
-        desc = 'This is a complex trigonometic oscillation function object.' + os.linesep
+        desc = 'This is a complex trigonometic oscillation function object.'
+        desc += os.linesep
         desc += 'It has the following attributes:' + os.linesep
         desc += '\tnLambda is: ' + str(self.nLambda) + os.linesep
         desc += '\tpts is: ' + str(self.pts) + os.linesep
@@ -333,22 +198,134 @@ class cplx_trig_func(object):
             desc += 'been resolved.' + os.linesep
         else:
             desc += 'not been resolved.' + os.linesep
-            desc += '\t Use the resolve() method to resolve parameter definitions.' + os.linesep
+            desc += '\t Use the resolve() method to resolve parameter definitions.' + os.linesep  # noqa: E501
 
-        desc += os.linesep + '\tUse the get_radian_space() method to obtain the radian space values.' + os.linesep
-        desc += '\tCall the object to obtain the complex trigonometic function array.'
+        desc += os.linesep + '\tUse the get_radian_space() method to obtain the radian space values.' + os.linesep  # noqa: E501
+        desc += '\tCall the object to obtain the complex trigonometic function array.'  # noqa: E501
 
         return desc
 
+    def get_radian_space(self) -> npt.NDArray[np.float_]:
+        """
+        Return the radian space array of the complex trigonometic
+        oscillation object.
+        """
+        # Try to reolve all the parameters from given data
+        self.resolve()
+
+        if self.x is not None:
+            x = np.linspace(0, self.nLambda*2*np.pi, self.pts)
+            self.x = x
+            self.dx = x[1]
+
+        return x
+
+    def resolve(self) -> None:
+        """
+        Try to resolve all the parameters from given data
+        """
+
+        if self.flg_resolved:
+            return          # Already resolved
+
+        # Tier 1
+        nLambda = self.nLambda
+        pts = self.pts
+        debug = self.debug
+        # Tier 2
+        length = self.length
+        freq = self.freq
+        # Tier 3
+        samp_rate = self.samp_rate
+        dt = self.dt
+
+        # Identify Tier 1 Variables
+        if pts is False:
+            # pts can be obtain from (length x samp_rate) or (length / dt)
+            # Need length in either case
+            if length is False:
+                # length can be obtained from (nLambda * freq)
+                if (nLambda is False) or (freq is False):
+                    raise InsufficientInput("nLambda (number of wavelengths) and freq (frequency) are needed to define length (duration)")  # noqa: E501
+                else:
+                    length = float(nLambda) / float(freq)
+
+            # length is now identified
+            if samp_rate is not False:
+                pts = int(float(length) * float(samp_rate))
+            elif dt is not False:
+                pts = int(float(length) / float(dt))
+            else:
+                raise InsufficientInput("Either samp_rate (sampling rate) or dt (sampling interval) is needed to define pts (number of points)")  # noqa: E501
+
+        # Identify Tier 1 variables
+        if nLambda is False:
+            # nLambda can be obtained from (length*freq)
+            if freq is False:
+                raise InsufficientInput("freq (frequency) is needed to define nLambda (number of wavelengths)")  # noqa: E501
+
+            if length is False:
+                # length can be obtained from (pts * dt) or (pts / samp_rate)
+                # Need pts in either case
+                if pts is False:
+                    raise InsufficientInput("pts (number of points) is needed to define length (duration)")  # noqa: E501
+
+                if dt is not False:
+                    length = int(np.round(pts)) * float(dt)
+                elif samp_rate is not False:
+                    length = int(np.round(pts)) / float(samp_rate)
+                else:
+                    raise InsufficientInput("Either samp_rate (sampling rate) or dt (sampling interval) is needed to define length (duration)")  # noqa: E501
+
+            nLambda = float(length) * float(freq)
+
+        # All the Tier 1 variables are solved
+        # Solve the rest of the variables
+        if length is False:
+            if freq is not False:
+                length = nLambda / freq
+            elif dt is not False:
+                length = pts * dt
+            elif samp_rate is not False:
+                length = pts / samp_rate
+            elif debug:
+                print('*** Unable to resolve Tier 2 variable length')
+
+        if freq is False:
+            if length is not False:
+                freq = nLambda / length
+            elif debug:
+                print('*** Unable to resolve Tier 2 variable freq')
+
+        if samp_rate is False:
+            if length is not False:
+                samp_rate = pts / length
+
+        if dt is False:
+            if length is not False:
+                dt = length / pts
+
+        # Write the variables back to the object
+        self.nLambda = nLambda
+        self.freq = freq
+        self.pts = pts
+        self.length = length
+        self.samp_rate = samp_rate
+        self.dt = dt
+
+        # Indicate all necessary variables has been resolved
+        self.flg_resolved = True
 
 
-class mother_morlet(object):
+class MotherMorlet:
     """
     A mother morlet object
     """
 
-    def __init__(self, M, w=5.0, s=1.0, A=1.0,\
-        complete=True, name=None, same_len=False, unit='scale'):
+    def __init__(self, M: int, w: float = 5.0, s: float = 1.0,
+                 A: float = 1.0, complete: bool = True,
+                 name: str = None, same_len: bool = False,
+                 unit: str = 'scale') -> None:
 
         """
         M           Length of the mother wavelet
@@ -357,7 +334,8 @@ class mother_morlet(object):
         A           Amplitude of the mother wavelet
         complete    Use the complete or standard version
         name        Name of the mother wavelet
-        same_len    Should daughter wavelet have the same M (but different s) as the mother wavelet.
+        same_len    Should daughter wavelet have the same M
+                    (but different s) as the mother wavelet.
         unit        Unit description for the scale (e.g. self(10) === 10 Hz)
         """
 
@@ -386,10 +364,7 @@ class mother_morlet(object):
         self.flg_complete = complete
         self.flg_same_len = same_len
 
-        return
-
-
-    def __call__(self, scale):
+    def __call__(self, scale: float) -> npt.NDArray[np.complex_]:
         """
         Scale relative to the mother wavelet
 
@@ -404,136 +379,35 @@ class mother_morlet(object):
             M = int(np.round(self.length * scale))
             s = self.window
 
-        return amp * sp.signal.wavelets.morlet(M, w=self.Omega0, s=s, complete=self.flg_complete)
+        return amp * sp.signal.wavelets.morlet(M, w=self.Omega0, s=s,
+                                               complete=self.flg_complete)
 
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.flg_complete:
-            desc = "Morlet (low oscillation corrected) mother wavelet of Omega0 = %(Omega0)1.2f." + os.linesep
+            desc = f"Morlet (low oscillation corrected) mother wavelet of Omega0 = {self.Omega0:1.2f}. {os.linesep}"  # noqa: E501
         else:
-            desc = "Morlet mother wavelet of Omega0 = %(Omega0)1.2f." + os.linesep
+            desc = f"Morlet mother wavelet of Omega0 = {self.Omega0:1.2f}."
+            desc += os.linesep
+
         if self.name is not None:
-            desc += "\t " + self.name + os.linesep
-        desc += "\t Number of points: " + str(self.length) + os.linesep
-        desc += "\t Window range: -%(s)1.2fpi to %(s)1.2fpi" + os.linesep
-        desc += "\t Unit Amplitude: %(A)1.3f" + os.linesep
-        desc += "\t Has a characteristic scale of: %(Scale)1.3f*2*pi" + os.linesep
-        desc += "\t Daughter wavelets have a scale in the unit of: %(Unit)s" + os.linesep
+            desc += f"\t {self.name}{os.linesep}"
+
+        desc += f"\t Number of points: {self.length}{os.linesep}"
+        desc += f"\t Window range: -{self.s:1.2f}𝜋 to {self.s:1.2}𝜋{os.linesep}"
+        desc += f"\t Unit Amplitude: {self.Amplitude}{os.linesep}"
+        desc += f"\t Has a characteristic scale of: {self.scale}*2*𝜋"
+        desc += os.linesep
+        desc += f"\t Daughter wavelets have a scale in the unit of: {self.unit}s" + os.linesep  # noqa: E501
         if self.flg_same_len:
             desc += "\t Constant number of points for daugter wavelets."
         else:
             desc += "\t Constant window range for daugter wavelets."
 
-        return desc % {'Omega0':self.Omega0, \
-                        's':self.window*2, \
-                        'A':self.Amplitude, \
-                        'Scale':self.scale, \
-                        'Unit':self.unit}
+        return desc
 
 
-def prettyunit(unit, v0, v1):
-    """
-    This is a more specialised function for scaling the axis when plotting.
-
-    Given the value range from V0 to V1, return suitable unit prefix and
-    scaling factor if unit definition exists.
-
-    Do nothing if unit is not defined. i.e. is None or is ''
-
-    """
-    scale = 1       # Default scale is not to modify anything
-
-    if unit == None or unit == '':
-        return unit, v0, v1, scale
-
-    # Apply unit prefix if unit is defined
-    if np.abs(v0) > np.abs(v1):
-        vref = v0
-    else:
-        vref = v1
-
-    scaled_vref, long_hand, short_hand, exponent = unitPrefix(vref)
-    scale = scaled_vref / vref
-    v0 *= scale
-    v1 *= scale
-
-    if short_hand == 'u':
-        unit = r'$\mu$' + unit
-        #unit = short_hand + unit
-    else:
-        unit = short_hand + unit
-
-    return unit, v0, v1, scale
-
-
-def buffered_search(f, string, start=0, buffer_size=4194304):
-    """
-    Given a file object [f], search for the location of [string], from the
-    given [start] offset position.
-
-    This function will only read [buffer_size] bytes into memory at a time.
-
-    Return -1 if string not found.
-    """
-    str_len = len(string)
-
-    if str_len > buffer_size:
-        raise BufferError("Target string longer than buffer length.")
-
-    f_pos = start
-
-    while True:
-        f.seek(f_pos)
-        buf = f.read(buffer_size)
-
-        if buf == '':
-            return -1                           # Reached the end of the file
-
-        str_pos = buf.find(string)
-
-        if str_pos == -1:
-            # Couldn't find the string yet, but the file is not finished
-            # Roll back, and continue to search
-            f_pos = f_pos + buffer_size - str_len
-            continue
-        else:
-            return f_pos + str_pos
-
-
-def smooth_angle(x, start=None, end=None):
-    """
-    Join up the phase angles in a numpy array
-
-    Majority of the data between index start and end are to be within +_ pi,
-    i.e. the first phase semi-circle.
-
-    The input array can the about of numpy.angle() for example, it is expected
-    that the array values are between +_ 2*pi
-    """
-
-    pi2 = 2*np.pi
-    dx = np.zeros(len(x)).astype(float)
-    dx[1:] = np.diff(x)
-    dx[dx > np.pi] -= pi2
-    dx[dx < -np.pi] += pi2
-    # Second pass to remove those with +2pi to - 2pi changes
-    dx[dx > np.pi] -= pi2
-    dx[dx < -np.pi] += pi2
-
-    # Put back the first element
-    dx[0] = x[0]
-
-    if (start is None) and (end is None):
-        return dx.cumsum()
-    else:
-        output = dx.cumsum()
-        npi = np.round(output[start:end].mean() / np.pi)
-        # print npi
-        return output - (npi * np.pi)
-
-
-
-def file_list(base_dir, ext=None, SubDir=False):
+def file_list(base_dir: str, ext: str = None,
+              sub_dir: bool = False) -> list[str]:
     """
     Generate a list containing the absolute path of all of the files matching
     the selection criteria under the given directory.
@@ -545,7 +419,7 @@ def file_list(base_dir, ext=None, SubDir=False):
     # Create a list of files
     flist = []
     if os.path.isdir(base_dir):
-        if SubDir == True:
+        if sub_dir is True:
             for root, dirs, files in os.walk(base_dir):
                 for name in files:
                     f = filePath(os.path.abspath(os.path.join(root, name)))
@@ -576,10 +450,9 @@ def file_list(base_dir, ext=None, SubDir=False):
     return flist
 
 
-
-def extrema(x, max=True, min=True, \
-            strict=False, withend=True, \
-            zero=False, flat=False):
+def extrema(x: npt.ArrayLike, max: bool = True, min: bool = True,
+            strict: bool = False,
+            withend: bool = True) -> tuple[int, float]:
     """
     This function will index the extrema of a given array x.
 
@@ -588,8 +461,6 @@ def extrema(x, max=True, min=True, \
         min     If true, will index minima
         strict  If true, will not idex changes to zero gradient
         withend If true, always include x[0] and x[-1]
-        Zero    If true, will include points where f(x) = f'(x) = f''(x) = 0
-        flat    If true, will include points where f'(x) = f''(x) = 0
 
     This function will return a tuple of extrema indexies and values
     """
@@ -633,7 +504,7 @@ def extrema(x, max=True, min=True, \
     return ind, x[ind]
 
 
-def zerocrossings(x):
+def zerocrossings(x: npt.ArrayLike) -> int:
     """
     This function will return the number of zero crossings in the given
     1-D numpy array.
@@ -652,11 +523,11 @@ def zerocrossings(x):
 
     # Pick out +ve <- 0 -> -ve type (II) zero crossings
     idsx = dsx.copy()
-    ## Remove type I zero crossings from list
+    # Remove type I zero crossings from list
     idsx[ind] = 0
 
-    ## Need two consecutive sign change to make a zero crossing
-    ### Remove zeros in the list
+    # Need two consecutive sign change to make a zero crossing
+    # Remove zeros in the list
     idsx = idsx[idsx.nonzero()[0]]
 
     cidsx = np.abs(idsx.cumsum()) - 1
@@ -666,7 +537,8 @@ def zerocrossings(x):
     return count
 
 
-def resample(time, data, rate=False):
+def resample(time: npt.ArrayLike, data: npt.ArrayLike,
+             rate=False) -> tuple[npt.NDArray, npt.NDArray]:
     """
     Resample the data series into the given sampling rate, this is
     implemented using the cubic spline interpolation.
@@ -720,8 +592,8 @@ def resample(time, data, rate=False):
             # This really shouldnt happen, but just in case the Decimal
             # function return numbers like 0.123e+45 instead of 1.23e+45
             scale = 1
-            print("Warning!! Unexpected values for scale evaluation!" + \
-            'scale variable (' + str(scale) + ') should be greater than 1.')
+            print(f"Warning!! Unexpected values for scale evaluation! \
+                  scale variable ({scale}) should be greater than 1.")
 
         # This is what the sampling rate should be
         spl_rate = scale * 10**exponent
@@ -746,11 +618,13 @@ def resample(time, data, rate=False):
     return [spl_time.astype(ttype), spl_data.astype(dtype)]
 
 
-def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
+def filtfilt(b: npt.ArrayLike, a: npt.ArrayLike, x: npt.ArrayLike,
+             axis: int = -1, padtype: str = 'odd',
+             padlen: int = None) -> npt.NDArray[np.float_]:
     """
     Local substitution of the scipy.signal.filtfilt funtion.
 
-    By defult, scipy.signal.filtfilt will pad the data with its end point
+    By default, scipy.signal.filtfilt will pad the data with its end point
     values. This can be problematic for 'noisy' data, where the end point
     values can be significantly different from the local average values.
 
@@ -758,17 +632,20 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     average values. The longest of the filter coefficients are taken as the
     average length.
     """
-    l = max((len(a), len(b)))
+    length = max((len(a), len(b)))
 
     # Modify the end points to force a specific padding value.
-    # This will aviod spikes at end points for 'noisy' data
-    x[0] = x[:l].mean()
-    x[-1] = x[-l:].mean()
+    # This will avoid spikes at end points for 'noisy' data
+    x[0] = x[:length].mean()
+    x[-1] = x[-length:].mean()
 
     return scipy_filtfilt(b, a, x, axis=axis, padtype=padtype, padlen=padlen)
 
 
-def spline_resize(x, n, l=0.005, window='hamming', order=3):
+def spline_resize(x: npt.ArrayLike, n: int,
+                  length: typing.Union[float, int] = 0.005,
+                  window: str = 'hamming',
+                  order: int = 3) -> npt.NDArray:
     """
     Resize the ndarray x in to n elements long.
 
@@ -808,22 +685,23 @@ def spline_resize(x, n, l=0.005, window='hamming', order=3):
     if m == n:
         return x            # Do nothing, no need to resize
 
-
     r = float(n) / m
     y = x.copy()
     if r > 1:               # Up sampling, no need to filter
-        # y = x.copy()
-        pass
+        y = x.copy()
     else:                   # r < 1, Down sampling, apply anti-aliasing filter
 
-        if type(l) is float: l = int(np.round(len(x) * l))     # FIR filter length
+        if type(length) is float:
+            length = int(np.round(len(x) * length))     # FIR filter length
 
-        if l%2 == 0: l += 1 # l must be odd for Type I filter
+        if length % 2 == 0:
+            length += 1  # l must be odd for Type I filter
 
-        if l < 3: l = 3 # Make sure l is at least three
+        if length < 3:
+            length = 3   # Make sure l is at least three
 
         # a = [1.]
-        b = sp.signal.firwin(l, r, window=window)
+        b = sp.signal.firwin(length, r, window=window)
 
         y = filtfilt(b, [1.], y)
 
@@ -832,110 +710,7 @@ def spline_resize(x, n, l=0.005, window='hamming', order=3):
     return s(np.linspace(0, m-1, n))
 
 
-def linearFunc(x0, y0, x1, y1):
-    """
-    Return a linear function given two points in space.
-    """
-    x0 = float(x0)
-    y0 = float(y0)
-    x1 = float(x1)
-    y1 = float(y1)
-    k = (y1 - y0) / (x1 - x0)
-    b = ((y0 - k*x0) + (y1 - k*x1)) / 2
-    return lambda x: k * x + b
-
-
-
-def logFunc(x0, y0, x1, y1, base=10):
-    """
-    Return a logarithmic function mapped on a arb. linear scale, given two points in space.
-
-    Useful for mapping logarithmic scale to array index, for example.
-    """
-    x0 = np.log(x0)/np.log(base)
-    x1 = np.log(x1)/np.log(base)
-
-    k = (y1 - y0) / (x1 - x0)
-    b = ((y0 - k*x0) + (y1 - k*x1)) / 2
-
-    return lambda x: k * np.log(x)/np.log(base) + b
-
-
-def expFunc(x0, y0, x1, y1, base=10):
-    """
-    Return a exponential function mapped on a arb. linear scale, given two points in space.
-
-    Useful for mapping array inedx to logarithmic scale, for example.
-    """
-    y0 = np.log(y0)/np.log(base)
-    y1 = np.log(y1)/np.log(base)
-
-    k = (y1 - y0) / (x1 - x0)
-    b = ((y0 - k*x0) + (y1 - k*x1)) / 2
-    return lambda x: base ** (k * x + b)
-
-
-def linearChk(ary, axis=-1, strict=False, debug=False):
-    """
-    This will check whether the input array, along the given axis
-    (default is a 1-D array) has a equal increments between elements.
-
-    Return true if it is linear, else, return the maximum difference.
-
-    Will compare to numerical accuracy if strict option == True, else it
-    is assume linear if none of the element is deviate more than one
-    increment away. String representations of numbers often have lower
-    precision than binary representation.
-
-    """
-
-    # Select the correct axis
-    if axis == -1:
-        tst = ary
-    else:
-        tst = ary[axis]
-
-
-    # Generate the linear reference array
-    linear = np.linspace(tst[0], tst[-1], len(tst))
-
-    # Compute the maximum deviation from linear expectation
-    diff = max(np.abs(linear - tst))
-
-
-    if diff == 0: # Excellent! Linear to within numerical accuracy
-        return True
-
-    elif strict == True:
-        return diff # Strict rules apply
-
-    else: # Relax the rules a little
-        if diff < np.abs(linear[1] - linear[0]):
-            return True # none of the elements overlap
-        else:
-            return diff # Even relaxed rules cant save this one
-
-
-
-def logChk(ary, axis=-1, strict=False, debug=False):
-    """
-    This will check whether the input array, along the given axis
-    (default is a 1-D array) has a equal increments between elements
-    in log scale.
-
-    Return true if it is linear, else, return the maximum difference.
-
-    Will compare to numerical accuracy if strict option == True, else it
-    is assume linear if none of the element is deviate more than one
-    increment away. String representations of numbers often have lower
-    precision than binary representation.
-
-    """
-
-    return linearChk(np.log(ary[axis], strict=strict, debug=debug))
-
-
-def unitPrefix(num):
+def unit_prefix(num: typing.Union[int, float]) -> tuple[float, str, str, int]:
     """
     Work out the appropriate unit prefix for a given number
 
@@ -950,10 +725,6 @@ def unitPrefix(num):
     >>> print str(prefix[0]) + prefix[2] + unit
     200.0MeV
 
-
-    Please note, the micron sign is not given in Unicode,
-    but replaced by "u" instead
-
     If the given number is beyond the scale listed below,
     the same number will be return.
 
@@ -966,7 +737,7 @@ def unitPrefix(num):
     mega    M   e+6
     kilo    k   e+3
     milli   m   e-3
-    micro   u   e-6
+    micro   μ   e-6
     nano    n   e-9
     pico    p   e-12
     femto   f   e-15
@@ -991,7 +762,7 @@ def unitPrefix(num):
     prefixLst.append(['femto', 'f', -15])
     prefixLst.append(['pico', 'p', -12])
     prefixLst.append(['nano', 'n', -9])
-    prefixLst.append(['micro', 'u', -6])
+    prefixLst.append(['micro', 'μ', -6])
     prefixLst.append(['milli', 'm', -3])
 
     # Because scientific notations are decimal numbers
@@ -1009,33 +780,141 @@ def unitPrefix(num):
     unit = prefixLst[scale]
     num = num / (10 ** unit[2])
 
-    return [num, unit[0], unit[1], unit[2]]
+    return (num, *unit)
 
 
-def engUnit(num, unit="", sigfig=None):
+def pretty_unit(unit: str, v0: float,
+                v1: float) -> tuple[str, float, float, float]:
+    """
+    This is a more specialised function for scaling the axis when plotting.
+
+    Given the value range from V0 to V1, return suitable unit prefix and
+    scaling factor if unit definition exists.
+
+    Do nothing if unit is not defined. i.e. is None or is ''
+
+    """
+    scale = 1       # Default scale is not to modify anything
+
+    if unit is None or unit == '':
+        return unit, v0, v1, scale
+
+    # Apply unit prefix if unit is defined
+    if np.abs(v0) > np.abs(v1):
+        vref = v0
+    else:
+        vref = v1
+
+    scaled_vref, long_hand, short_hand, exponent = unit_prefix(vref)
+    scale = scaled_vref / vref
+    v0 *= scale
+    v1 *= scale
+
+    unit = ''.join((short_hand, unit))
+
+    return (unit, v0, v1, scale)
+
+
+def eng_unit(num: float, unit: str = "",
+             sigfig: int = None) -> str:
     """
     Return a print string for num with approprate engineering unit
 
     """
 
-    prefix = unitPrefix(num)
+    prefix = unit_prefix(num)
 
     if sigfig is None:
         return str(prefix[0]) + prefix[2] + unit
 
     num = prefix[0]
-    scale = 10 ** decimal.Decimal(str(num)).adjusted()      # scaling to make 1.2345e67
-    #scale = 10 ** floor(log10(num))                # log10 wont work for 0
-    num = np.round((num / scale), sigfig -1) * scale   # round to the correct sigfig
-    num = '%(num)- 0.15f' % {'num' : num}           # Limit to 18 sigfig for safety
-    num = num[:sigfig+2].rstrip('.')                # 1 decimal point, 1 sign
+    scale = 10 ** decimal.Decimal(str(num)).adjusted()
+
+    # Round to correct sig fig
+    num = np.round((num / scale), sigfig - 1) * scale
+    num = f'{num:0.15f}'
+    # 1 decimal point, 1 sign
+    num = num[:sigfig+2].rstrip('.')
 
     engstr = num + prefix[2] + unit
 
     return engstr.strip()
 
 
-def zerostretches(x, zero_threshold=1e-6, zero_runlength=3, atol=1e-12):
+def buffered_search(f: typing.IO, string: typing.Union[str, bytes],
+                    start: int = 0,
+                    buffer_size: int = 4194304) -> int:
+    """
+    Given a file object [f], search for the location of [string], from the
+    given [start] offset position.
+
+    This function will only read [buffer_size] bytes into memory at a time.
+
+    Return -1 if string not found.
+    """
+    str_len = len(string)
+
+    if str_len > buffer_size:
+        raise BufferError("Target string longer than buffer length.")
+
+    f_pos = start
+
+    while True:
+        print(f_pos)
+        f.seek(f_pos)
+        buf = f.read(buffer_size)
+
+        if buf == b'':
+            return -1                           # Reached the end of the file
+
+        str_pos = buf.find(string)
+
+        if str_pos == -1:
+            # Couldn't find the string yet, but the file is not finished
+            # Roll back, and continue to search
+            f_pos = f_pos + buffer_size - str_len
+            continue
+        else:
+            return f_pos + str_pos
+
+
+def smooth_angle(x: npt.ArrayLike, start: int = None,
+                 end: int = None) -> npt.NDArray:
+    """
+    Join up the phase angles in a numpy array
+
+    Majority of the data between index start and end are to be within +_ pi,
+    i.e. the first phase semi-circle.
+
+    The input array can the about of numpy.angle() for example, it is expected
+    that the array values are between +_ 2*pi
+    """
+
+    pi2 = 2*np.pi
+    dx = np.zeros(len(x), dtype='float')
+    dx[1:] = np.diff(x)
+    dx[dx > np.pi] -= pi2
+    dx[dx < -np.pi] += pi2
+    # Second pass to remove those with +2pi to - 2pi changes
+    dx[dx > np.pi] -= pi2
+    dx[dx < -np.pi] += pi2
+
+    # Put back the first element
+    dx[0] = x[0]
+
+    if (start is None) and (end is None):
+        return dx.cumsum()
+    else:
+        output = dx.cumsum()
+        npi = np.round(output[start:end].mean() / np.pi)
+        # print npi
+        return output - (npi * np.pi)
+
+
+def zero_stretches(x: npt.ArrayLike, zero_threshold: float = 1e-6,
+                   zero_runlength: int = 3,
+                   atol: float = 1e-12) -> tuple[npt.NDArray[np.int_],
+                                                 npt.NDArray[np.int_]]:
     """
     Running zero detection.
 
@@ -1073,23 +952,14 @@ def zerostretches(x, zero_threshold=1e-6, zero_runlength=3, atol=1e-12):
     Returns:
         (array([ 1,  3, 10, 15]), array([ 2,  5, 13, 20]))
     """
-    #zero_threshold = 1e-6
-    #zero_runlength = 0
-    #from numpy import array
-    #x = array([-0.6,0,-0.2,0,0,-0.1,-0.7,0.2,0.2,0.6,0,0,0,0.3,-0.8,0,0,0,0,0,0.1,0.8])
-    # x = [1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1]
-    #from numpy import where
-    #from numpy import abs, ones, zeros
-
-
     # Do the abs, just incase x is complex
     m = np.abs(x)
 
     # Map out all the zeros
-    z = np.ones(len(m), int)
+    z = np.ones(len(m), dtype=int)
     z[np.where(m < max(max(m)*zero_threshold, atol))[0]] = 0
 
-    dz = np.zeros(len(m), int)
+    dz = np.zeros(len(m), dtype=int)
     dz[1:] = np.diff(z)
 
     # Manually add zero starts
@@ -1112,7 +982,8 @@ def zerostretches(x, zero_threshold=1e-6, zero_runlength=3, atol=1e-12):
     return (start, end)
 
 
-def resolve_complex_collusion(knots, asint=True, threshold=0):
+def resolve_complex_collusion(knots: npt.ArrayLike, asint: bool = True,
+                              threshold: float = 0) -> npt.NDArray:
     """
     This function will search for items with identical real part (as int)
     in a complex array, reduce them to an item with the same int real
@@ -1148,7 +1019,8 @@ def resolve_complex_collusion(knots, asint=True, threshold=0):
         didx[1:] = np.diff(idx)
         pos = np.where(didx < 1)[0]
         # Create a list of colliding positions
-        # Only select those with didx just became zero (i.e. the first collusion)
+        # Only select those with didx just became zero
+        # (i.e. the first collusion)
         collusions = idx[pos[np.nonzero(didx[pos-1])[0]]]
         # Walk through the list of collusions
         for i in collusions:
@@ -1167,7 +1039,7 @@ def resolve_complex_collusion(knots, asint=True, threshold=0):
         # Knot index should at least advance by the amount defined by threshold
         didx[1:] = (np.diff(idx) > threshold).astype(int)
         # Create a list of colliding positions
-        collusions = zerostretches(didx, zero_runlength=1)
+        collusions = zero_stretches(didx, zero_runlength=1)
         # Walk through the list of collusions
         for i in zip(collusions[0], collusions[1]):
             begin = i[0] - 1
@@ -1184,15 +1056,17 @@ def resolve_complex_collusion(knots, asint=True, threshold=0):
     return np.sort(knots)[len(np.where(knots == -1)[0]):]
 
 
-def gettypecode(bytelen, dtype):
+def gettypecode(bytelen: int,
+                dtype: typing.Union[str, float, int]) -> str:
     """
-    Given the bit length and desired data type, work out the approprate type code.
+    Given the bit length and desired data type, work out the
+    approprate type code.
 
     bytelen     <int>  Number of bytes
     dtype       {'int'|'Uint'|'float'}
     """
     #
-    #Format   C Type             Python
+    # Format   C Type             Python
     #  x      pad byte           no value
     #  c      char               string of length 1
     #  b      signed char        integer
@@ -1215,30 +1089,32 @@ def gettypecode(bytelen, dtype):
     # ['c', 'b', 'u', 'i', 'l', 'f', 'd', 'F', 'D', 'O']
     #
 
-    if dtype == 'int' or dtype is type(int()):
+    if dtype == 'int' or dtype is type(int):
         lst = ['b', 'h', 'i', 'l', 'q']
     elif dtype == 'Uint':
         lst = ['B', 'H', 'I', 'L', 'Q']
-    elif dtype == 'float' or dtype is type(float()):
+    elif dtype == 'float' or dtype is type(float):
         lst = ['f', 'd']
-    #elif dtype == 'complex':
-    #    lst = ['F','D']
+    # elif dtype == 'complex':
+    #     lst = ['F','D']
     else:
-        raise ValueError('Specified dtype: ' + str(dtype) + ' is not recognised.')
+        raise ValueError(f'Specified dtype: {dtype} is not recognised.')
 
     for typecode in lst:
         if struct.calcsize(typecode) == bytelen:
             return typecode
 
     # Unable to find a match
-    raise ValueError('Unable to find a suitable typecode for the speficied dtype (' + str(dtype) + ') and byte length (' + str(bytelen) + ').')
+    raise ValueError(f'Unable to find a suitable typecode for the speficied \
+                     dtype ({dtype}) and byte length ({bytelen}).')
 
-def quantise(ary, threshold=1e-8):
+
+def quantise(ary: npt.ArrayLike, threshold: float = 1e-8) -> float:
     """
     It will attempt to find the quantisation step size of a float array
 
-    Quantisation error should not be bigger than the fraction of quantisation step
-    size given by the threshold.
+    Quantisation error should not be bigger than the fraction of
+    quantisation step size given by the threshold.
 
     Return quantisation step if a reasonable value is found
     """
@@ -1248,17 +1124,22 @@ def quantise(ary, threshold=1e-8):
     quanter = quantum[np.nonzero(quantum)].min()
 
     # See if all increments are multiples of the quanter
-    quantum /= quanter          # Attempt quantisation
-    quantum -= np.floor(quantum)   # Remove the whole number multiples
-    quantum /= threshold        # Inflate the fractional error by threshold amount
+    # Attempt quantisation
+    quantum /= quanter
+    # Remove the whole number multiples
+    quantum -= np.floor(quantum)
+    #  Inflate the fractional error by threshold amount
+    quantum /= threshold
     offlimit = np.squeeze(np.nonzero(quantum > quanter))
 
-    if len(offlimit) is not 0:
+    if len(offlimit) != 0:
         raise QuantsationError
     else:
         return quanter
 
-def decimate2(x, n=None, axis=-1, window='hamming'):
+
+def decimate2(x: npt.ArrayLike, n: int = None,
+              axis: int = -1, window: str = 'hamming') -> npt.NDArray:
     """
     Similar to scipy.signal.decimate, but fixed decimation factor to q = 2, and
     force two pass FIR filter to ensure zero group delay.
@@ -1281,7 +1162,7 @@ def decimate2(x, n=None, axis=-1, window='hamming'):
         n = 3
 
     # n must be odd for Type I filter
-    if n%2 == 0:
+    if n % 2 == 0:
         n += 1
 
     b = sp.signal.firwin(n, 0.5, window=window)
@@ -1303,7 +1184,8 @@ def timestamp():
 
     '2014-12-15 01:21:05'
     """
-    return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+    return datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d %H:%M:%S')
+
 
 def datestamp():
     """
@@ -1311,71 +1193,108 @@ def datestamp():
 
     '2014-12-15'
     """
-    return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d')
+    return datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d')
 
 
-########################################################################
-# This morlet function has been accepted into the Scipy package.
-#
-# Use the following instead:
-#    from scipy.signal.wavelets import morlet
-#
-########################################################################
-#def morlet(M, w = 5.0, s = 1.0, cplt = True):
-#   """
-#    Returns the complex Morlet wavelet with length of M
-#
-#    Inputs:
-#        M   Length of the wavelet
-#        w   Omega0
-#        s   Scaling factor, windowed from -s*2*pi to +s*2*pi
-#        cplt    Use the complete or standard version
-#
-#    The standard version:
-#    pi**-0.25 * exp(1j*w*x) * exp(-0.5*(x**2))
-#
-#    Often referred to as simply the Morlet wavelet in many text,
-#        also commonly use in practice. However, this simplified version
-#        can cause admissibility problem at low w.
-#
-#    The complete version:
-#    pi**-0.25 * (exp(1j*w*x) - exp(-0.5*(w**2))) * exp(-0.5*(x**2))
-#
-#    Complete version of the Morlet wavelet, with the correction
-#        term to improve admissibility. For w is greater than 5, the
-#        correction term will be negligible.
-#
-#    The energy of the return wavelet is NOT normalised according to s.
-#
-#    NB: The fundamental frequency of this wavelet in Hz is given by:
-#
-#        f = 2*s*w*r / M
-#
-#        r - Sampling Rate
-#
-#    """
-#
-#    correction = exp(-0.5*(w**2))
-#    c1 = 1j*w
-#    s *= 2*pi
-#
-#    xlist = linspace(-s, s, M)
-#    output = zeros(M).astype('F')
-#
-##   if cplt == True:
-##       for i in range(M):
-##           x = xlist[i]
-##           output[i] = (exp(c1*x) - correction) * exp(-0.5*(x**2))
-##   else:
-##       for i in range(M):
-##           x = xlist[i]
-##           output[i] = exp(c1*x) * exp(-0.5*(x**2))
-#
-#    if cplt == True:
-#        output = (exp(c1*xlist) - correction) * exp(-0.5*(xlist**2))
-#    else:
-#        output = exp(c1*xlist) * exp(-0.5*(xlist**2))
-#
-#    output *= pi**-0.25
-#
-#    return output
+def linear_func(x0: float, y0: float, x1: float,
+                y1: float) -> typing.Callable[[float], float]:
+    """
+    Return a linear function given two points in space.
+    """
+    x0 = float(x0)
+    y0 = float(y0)
+    x1 = float(x1)
+    y1 = float(y1)
+    k = (y1 - y0) / (x1 - x0)
+    b = ((y0 - k*x0) + (y1 - k*x1)) / 2
+    return lambda x: k * x + b
+
+
+def log_func(x0: float, y0: float, x1: float,
+             y1: float, base: int = 10) -> typing.Callable[[float], float]:
+    """
+    Return a logarithmic function mapped on a arb. linear scale, given
+    two points in space.
+
+    Useful for mapping logarithmic scale to array index, for example.
+    """
+    x0 = np.log(x0)/np.log(base)
+    x1 = np.log(x1)/np.log(base)
+
+    k = (y1 - y0) / (x1 - x0)
+    b = ((y0 - k*x0) + (y1 - k*x1)) / 2
+
+    return lambda x: k * np.log(x)/np.log(base) + b
+
+
+def exp_func(x0: float, y0: float, x1: float,
+             y1: float, base: int = 10) -> typing.Callable[[float], float]:
+    """
+    Return a exponential function mapped on a arb. linear scale, given
+    two points in space.
+
+    Useful for mapping array inedx to logarithmic scale, for example.
+    """
+    y0 = np.log(y0)/np.log(base)
+    y1 = np.log(y1)/np.log(base)
+
+    k = (y1 - y0) / (x1 - x0)
+    b = ((y0 - k*x0) + (y1 - k*x1)) / 2
+    return lambda x: base ** (k * x + b)
+
+
+def linear_chk(ary: npt.ArrayLike, axis: int = -1,
+               strict: bool = False) -> typing.Union[bool, float]:
+    """
+    This will check whether the input array, along the given axis
+    (default is a 1-D array) has a equal increments between elements.
+
+    Return true if it is linear, else, return the maximum difference.
+
+    Will compare to numerical accuracy if strict option == True, else it
+    is assume linear if none of the element is deviate more than one
+    increment away. String representations of numbers often have lower
+    precision than binary representation.
+
+    """
+
+    # Select the correct axis
+    if axis == -1:
+        tst = ary
+    else:
+        tst = ary[axis]
+
+    # Generate the linear reference array
+    linear = np.linspace(tst[0], tst[-1], len(tst))
+
+    # Compute the maximum deviation from linear expectation
+    diff = max(np.abs(linear - tst))
+
+    if diff == 0:
+        # Excellent! Linear to within numerical accuracy
+        return True
+    elif strict is True:
+        return diff   # Strict rules apply
+    else:   # Relax the rules a little
+        if diff < np.abs(linear[1] - linear[0]):
+            return True  # none of the elements overlap
+        else:
+            return diff  # Even relaxed rules cant save this one
+
+
+def log_chk(ary: npt.ArrayLike, axis: int = -1,
+            strict: bool = False) -> typing.Union[bool, float]:
+    """
+    This will check whether the input array, along the given axis
+    (default is a 1-D array) has a equal increments between elements
+    in log scale.
+
+    Return true if it is linear, else, return the maximum difference.
+
+    Will compare to numerical accuracy if strict option == True, else it
+    is assume linear if none of the element is deviate more than one
+    increment away. String representations of numbers often have lower
+    precision than binary representation.
+
+    """
+    return linear_chk(np.log(ary[axis], strict=strict))

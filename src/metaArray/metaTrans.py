@@ -1,36 +1,30 @@
-#       This program is free software; you can redistribute it and/or modify
-#       it under the terms of the GNU General Public License as published by
-#       the Free Software Foundation; either version 2 of the License, or
-#       (at your option) any later version.
-#
-#       This program is distributed in the hope that it will be useful,
-#       but WITHOUT ANY WARRANTY; without even the implied warranty of
-#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#       GNU General Public License for more details.
-#
-#       You should have received a copy of the GNU General Public License
-#       along with this program; if not, write to the Free Software
-#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#       MA 02110-1301, USA.
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 26 2024 14:05
 
-'''
+@author: samhill
+
 This file contain numerical transforms that can handle metaArray
-'''
+"""
 
 import numpy as np
 import scipy as sp
+import typing
 
-from metaArray.core import metaArray
-from metaArray.misc import resample
-from metaArray.misc import spline_resize
+from .core import metaArray
+from .misc import resample, MotherMorlet
+from .misc import spline_resize
 
-def rfft(metAry, n=None, axes=-1):
+
+def rfft(metAry: metaArray, n: int = None,
+         axes: int = -1) -> metaArray:
     """
     RFFT function wraper for numpy.fft to be used on metaArray objects, returns
     scaled metaArray object.
     """
 
-    nyquist = len(metAry) * 0.5 / (metAry.get_range(axes, 'end') - metAry.get_range(axes, 'begin'))
+    span = metAry.get_range(axes, 'end') - metAry.get_range(axes, 'begin')
+    nyquist = len(metAry) * 0.5 / (span)
 
     fary = metaArray(np.fft.rfft(metAry.data, n, axes))
 
@@ -49,10 +43,10 @@ def rfft(metAry, n=None, axes=-1):
     return fary
 
 
-
-
-def stfft(metAry, tres=100, fres=None, window='blackmanharris', \
-            fmin=None, fmax=None, mag=True, debug=False):
+def stfft(metAry: metaArray, tres: int = 100, fres: int = None,
+          window: str = 'blackmanharris', fmin: float = None,
+          fmax: float = None, mag: bool = True,
+          debug: bool = False) -> metaArray:
     """
     Simple implementation of short time fast Fourier transform on metaArray
     object.
@@ -63,7 +57,8 @@ def stfft(metAry, tres=100, fres=None, window='blackmanharris', \
     window      Window function or None
     fmin        Cut-off frequency for the return data, default to the 0
     fmax        Cut-off frequency for the return data, default to the Nyquist
-    mag         The default is to return the abs() value, return complex array if false
+    mag         The default is to return the abs() value, return complex
+                array if false
 
     Each window will overlap 50% with its immediate neighbours. e.g.:
 
@@ -75,14 +70,15 @@ def stfft(metAry, tres=100, fres=None, window='blackmanharris', \
     f1 = fmax
 
     # Length of the (short) time window
-    l = int(round(2 * len(metAry) / float(tres)))
+    length = int(round(2 * len(metAry) / float(tres)))
 
     # List of (short) time window starting points
-    winlst = sp.linspace(0, len(metAry) - l, tres).round().astype(int)
+    winlst = np.linspace(0, len(metAry) - length, tres).round().astype(int)
 
     # Native RFFT frequency resolution to Nyquist
-    lfres = int(np.floor(l/2.0)+1)
-    Nyquist = 0.5 * len(metAry) / (metAry.get_range(0, 'end') - metAry.get_range(0, 'begin'))
+    lfres = int(np.floor(length/2.0)+1)
+    span = metAry.get_range(0, 'end') - metAry.get_range(0, 'begin')
+    Nyquist = 0.5 * len(metAry) / (span)
 
     # RFFT len, use native resolution by default
     n = None
@@ -91,7 +87,7 @@ def stfft(metAry, tres=100, fres=None, window='blackmanharris', \
     if window is None:
         win = 1
     else:
-        win = sp.signal.get_window(window, l)
+        win = sp.signal.get_window(window, length)
 
     # Decide where to slice the rfft output as a ratio to Nyquist
     # Make fmax < 1 or None
@@ -128,9 +124,8 @@ def stfft(metAry, tres=100, fres=None, window='blackmanharris', \
         elif gfres < lfres:
             # No need for padding, but throwing away freq resolution for nothing
             if debug:
-                print("*** Warning, frequency resolution is artificially limited")
+                print("Warning, frequency resolution is artificially limited")
         # else gfres = lfres, no need for padding, native fres is just right
-
 
     # Convert fmax to array length if specified
     if fmax is not None:
@@ -142,9 +137,9 @@ def stfft(metAry, tres=100, fres=None, window='blackmanharris', \
             fmax = int(round(lfres * fmax))
 
     if debug:
-        src_len = len(metAry.data[:l]*win)
-        rfft_len = len(np.fft.rfft(metAry.data[:l]*win, n=n))
-        print("*** l: " + str(l))
+        src_len = len(metAry.data[:length]*win)
+        rfft_len = len(np.fft.rfft(metAry.data[:length]*win, n=n))
+        print("*** l: " + str(length))
         print("*** lfres: " + str(lfres))
         print("*** Nyquist: " + str(Nyquist))
         print("*** n: " + str(n))
@@ -153,27 +148,28 @@ def stfft(metAry, tres=100, fres=None, window='blackmanharris', \
         print("*** src_len: " + str(src_len))
         print("*** rfft_len: " + str(rfft_len))
 
-
     if mag:
         # Construct a place holder of the 2D time-freq output
         tfary = np.zeros((tres, fres)).astype(float)
         for i in range(len(winlst)):
             t = winlst[i]                # Where the (short) time window starts
             # Do the rfft to length n, and slice to fmax, then take abs()
-            tfary[i] = spline_resize(abs(np.fft.rfft(metAry.data[t:t+l]*win, n=n)[:fmax]), fres)
+            fft = np.fft.rfft(metAry.data[t:t+length]*win, n=n)[:fmax]
+            tfary[i] = spline_resize(abs(fft), fres)
     else:
         # Construct a place holder of the 2D time-freq output
         tfary = np.zeros((tres, fres)).astype(complex)
         for i in range(len(winlst)):
             t = winlst[i]
             # Do the rfft to length n, and slice to fmax
-            tfary[i] = spline_resize(np.fft.rfft(metAry.data[t:t+l]*win, n=n)[:fmax], fres)
+            fft = np.fft.rfft(metAry.data[t:t+length]*win, n=n)[:fmax]
+            tfary[i] = spline_resize(fft, fres)
 
     tfary = metaArray(tfary)
 
     try:
         tfary['name'] = 'STFFT{ ' + metAry['name'] + ' }'
-    except:
+    except TypeError:
         tfary['name'] = 'STFFT{ }'
 
     tfary['unit'] = metAry['unit']
@@ -195,7 +191,10 @@ def stfft(metAry, tres=100, fres=None, window='blackmanharris', \
     return tfary
 
 
-def cwt(x, wavelet, scale0, scale1, res, scale=10, tres=None, debug=False):
+def cwt(x: metaArray, wavelet: MotherMorlet, scale0: typing.Union[int, float],
+        scale1: typing.Union[int, float], res: int,
+        scale: typing.Union[int, float, bool, str] = 10,
+        tres: float = None, debug: bool = False) -> metaArray:
     """
     This function will return continous wavelet transform of x,
     calculated by the convolution method.
@@ -208,7 +207,8 @@ def cwt(x, wavelet, scale0, scale1, res, scale=10, tres=None, debug=False):
                     provide the largest scale daughter wavelet)
         scale0      Starting scale length
         scale1      Stoping scale length
-        res         Resolution in the scale space (i.e. number of daughter wavelets)
+        res         Resolution in the scale space (i.e. number of
+                    daughter wavelets)
         tres        Resolution in the time space (Default to be same as x)
 
     Options:
@@ -259,7 +259,7 @@ def cwt(x, wavelet, scale0, scale1, res, scale=10, tres=None, debug=False):
 
     try:
         prange['unit'][1] = wavelet.unit
-    except:
+    except AttributeError:
         pass
 
     if x['name'] is not None:
@@ -267,63 +267,58 @@ def cwt(x, wavelet, scale0, scale1, res, scale=10, tres=None, debug=False):
     else:
         page['name'] = 'cwt'
 
-
     # Generate a list of scales
     if isinstance(scale, int) or isinstance(scale, float):
         # Log scale applied, given log base.
         scale0 = np.log(scale0)/np.log(scale)
         scale1 = np.log(scale1)/np.log(scale)
         # print "*** num", scale0, scale1, res, scale
-        scl_lst = sp.logspace(scale0, scale1, res, base=scale)
+        scl_lst = np.logspace(scale0, scale1, res, base=scale)
         prange['log'][1] = scale
-    elif scale == True:
+    elif scale is True:
         # Log scale applied, use default base
         scale0 = np.log(scale0)/np.log(10)
         scale1 = np.log(scale1)/np.log(10)
         # print "*** log", scale0, scale1, res, scale
-        scl_lst = sp.logspace(scale0, scale1, res, base=10)
+        scl_lst = np.logspace(scale0, scale1, res, base=10)
         prange['log'][1] = 10
     elif scale == 'linscal':
         # print "*** lin", scale0, scale1, res, scale
         # Log scale is not applied, everything is linear
-        scl_lst = sp.linspace(scale0, scale1, res)
+        scl_lst = np.linspace(scale0, scale1, res)
     elif scale == 'linfreq':
         scale0 = 1 / scale0
         scale1 = 1 / scale1
-        scl_lst = sp.linspace(scale0, scale1, res)
+        scl_lst = np.linspace(scale0, scale1, res)
         scl_lst = 1 / scl_lst
     else:
-        raise ValueError("Log scale descriptor can only be int,\
-            float, True, False or None, given: " + str(scale))
+        raise ValueError(f"Log scale descriptor can only be int, \
+                         float, True, False or None, given: {scale}")
 
     # return scl_lst, page
 
     if debug:
-        print("There are a total number of " + str(len(scl_lst)) + " scales to be processed:")
+        print(f"There are {len(scl_lst)} scales to be processed")
 
     for i in range(len(scl_lst)):
 
         d_wavelet = wavelet(scl_lst[i])
 
-        ###if debug:
-        ###   print "\t line number: " + str(i) + "\t scale: " + str(scl_lst[i]) + "\t x.data: " + str(len(x.data)) + "\t wavelet: " + str(len(d_wavelet)
-
         if len(d_wavelet) > d_len:
-            # It probably shouldnt happen, because the daughter wavelet is longer than
-            # the signal itself now
-            print("\t line number: " + str(i) + "\t scale: " + str(scl_lst[i]) + "\t data length: " + str(len(x.data)) + "\t wavelet length: " + str(len(d_wavelet)))
-            raise ValueError("Warning - Daughter wavelet is longer than itself!!")
+            # It probably shouldnt happen, because the daughter wavelet
+            # is longer than the signal itself now
+            print(f"\t line number: {i}\t scale: {str(scl_lst[i])}" +
+                  f"\t data length: {len(x.data)}\t wavelet length: " +
+                  str(len(d_wavelet)))
+            raise ValueError("Warning: Daughter wavelet is longer than itself!")
         else:
             line = sp.signal.convolve(data, d_wavelet, mode='same')
 
         if flag_resample:
-            ###if debug:
-            ###   print "\t resmp_time: " + str(len(resmp_time)) + "\t line: " + str(len(line)) + "\t resmp_rate: " + str(resmp_rate)
-
             line = resample(resmp_time, line, resmp_rate)[1]
 
             if debug:
-                print("\t line number: " + str(i) + "\t scale: " + str(scl_lst[i]))
+                print(f"\t line number: {i}\t scale: {str(scl_lst[i])}")
 
         page.data[:len(line), i] = line
 

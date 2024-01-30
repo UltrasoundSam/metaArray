@@ -1,44 +1,38 @@
-#  drv_pylab.py
-#
-#  Copyright 2015 Unknown <charley@utc2d>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#  MA 02110-1301, USA.
-#
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 26 2024 12:01
 
-'''
+@author: samhill
+
 This file contain a number of drivers classes to matplotlib.
-'''
-
-from matplotlib.pyplot import figure
-from matplotlib import cm
-from mpl_toolkits.axes_grid.parasite_axes import SubplotHost
-from matplotlib import rcParams
-import matplotlib.pyplot as plt
+"""
 
 import numpy as np
+import typing
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+from matplotlib.pyplot import figure
+from mpl_toolkits.axes_grid1.parasite_axes import SubplotHost
 
-from metaArray.misc import prettyunit
+
+from .misc import pretty_unit
+from .core import metaArray
 
 
-def plotcomplexpolar(metaAry, axis=-1, size=(10, 7.5), dpi=75, \
-                    grid=True, legend=0, fontsize=14, linewidth=2.0, \
-                    log_mag=False, mag_label=None, mag_unit=None, \
-                    pha_label=None, pha_unit=None, degree=False):
+# Useful type hint aliases
+fig_twoax = tuple[plt.Figure, plt.Axes, plt.Axes]
+
+
+def plotcomplexpolar(metaAry: metaArray, axis: int = -1,
+                     size: tuple[float, float] = (10, 7.5), dpi: float = 75,
+                     grid: bool = True, legend: int = 0, fontsize: float = 14,
+                     linewidth: float = 2.0, log_mag: bool = False,
+                     mag_label: str = None, mag_unit: str = None,
+                     pha_label: str = None, pha_unit: str = None,
+                     degree: bool = False) -> fig_twoax:
     """
-    metaArray function to do a simple 1D plot of complex array (metaAry[axis]) as magnitude and phase angle.
+    metaArray function to do a simple 1D plot of complex array (metaAry[axis])
+    as magnitude and phase angle.
 
     legend:
         'best'  0
@@ -54,7 +48,7 @@ def plotcomplexpolar(metaAry, axis=-1, size=(10, 7.5), dpi=75, \
         'center'        10
     """
 
-    assert type(axis) is int, "Axis is not an integer: {!r}".format(axis)
+    assert type(axis) is int, f"Axis is not an integer: {axis}"
 
     fontsize = float(fontsize)
 
@@ -73,22 +67,25 @@ def plotcomplexpolar(metaAry, axis=-1, size=(10, 7.5), dpi=75, \
     # Load the plotting ranges and units
     x0 = metaAry.get_range(axis, 'begin')
     x1 = metaAry.get_range(axis, 'end')
-    my0 = min(mag)
-    my1 = max(mag)
-    py0 = np.floor(4 * min(pha) / np.pi)      # Round to the nearest pi/4
-    py1 = np.ceil(4 * max(pha) / np.pi)
+    my0 = mag.min()
+    my1 = mag.max()
 
-    pticks = np.arange(py0, py1+1)          # Ticks in pi/4 interval
+    # Round to the nearest π/4
+    py0 = np.floor(4 * pha.min() / np.pi)
+    py1 = np.ceil(4 * pha.max() / np.pi)
+
+    # Ticks in pi/4 interval
+    pticks = np.arange(py0, py1+1)
 
     xunit = metaAry.get_range(axis, 'unit')
 
-    if mag_unit == None:
+    if mag_unit is None:
         myunit = metaAry['unit']
     else:
         myunit = str(mag_unit)
 
-    if pha_unit == None:
-        if degree == True:
+    if pha_unit is None:
+        if degree is True:
             pyunit = 'Deg.'
         else:
             pyunit = 'Rad.'
@@ -96,7 +93,7 @@ def plotcomplexpolar(metaAry, axis=-1, size=(10, 7.5), dpi=75, \
         pyunit = pha_unit
 
     # Leave 10% margin in the y axis
-    if log_mag == True:
+    if log_mag is True:
         my0 = np.log10(my0)
         my1 = np.log10(my1)
 
@@ -105,7 +102,7 @@ def plotcomplexpolar(metaAry, axis=-1, size=(10, 7.5), dpi=75, \
     my0 = np.sign(my0-mmean) * mreach + mmean
     my1 = np.sign(my1-mmean) * mreach + mmean
 
-    if log_mag == True:
+    if log_mag is True:
         my0 = 10**my0
         my1 = 10**my1
 
@@ -118,9 +115,9 @@ def plotcomplexpolar(metaAry, axis=-1, size=(10, 7.5), dpi=75, \
     py0, py1 = scale_check(py0, py1)
 
     # Apply unit prefix if unit is defined
-    xunit, x0, x1, xscale = prettyunit(xunit, x0, x1)
-    myunit, my0, my1, myscale = prettyunit(myunit, my0, my1)
-    pyunit, py0, py1, pyscale = prettyunit(pyunit, py0, py1)
+    xunit, x0, x1, xscale = pretty_unit(xunit, x0, x1)
+    myunit, my0, my1, myscale = pretty_unit(myunit, my0, my1)
+    pyunit, py0, py1, pyscale = pretty_unit(pyunit, py0, py1)
 
     x = metaAry.get_axis(axis=axis)
 
@@ -140,17 +137,17 @@ def plotcomplexpolar(metaAry, axis=-1, size=(10, 7.5), dpi=75, \
     title = metaAry['name']
 
     # Done the preparation, do the actual plotting
-
     fig, ax1 = plt.subplots(figsize=size, dpi=dpi)
     ax2 = ax1.twinx()
-    ax1.grid(True, which="both", ls="--", color='g')
+    ax1.grid(grid, which="both", ls="--", color='g')
 
     ######
 
     ax1.plot(x, mag, 'b-', linewidth=linewidth, label=mag_label)
 
-    if degree == True:
-        ax2.plot(x, pha * 180 / np.pi, 'r--', linewidth=linewidth, label=pha_label)
+    if degree is True:
+        ax2.plot(x, pha * 180 / np.pi, 'r--', linewidth=linewidth,
+                 label=pha_label)
     else:
         ax2.plot(x, pha, 'r--', linewidth=linewidth, label=pha_label)
 
@@ -161,7 +158,7 @@ def plotcomplexpolar(metaAry, axis=-1, size=(10, 7.5), dpi=75, \
         tl.set_color('b')
         tl.set_fontsize(fontsize)
 
-    if log_mag == True:
+    if log_mag is True:
         ax1.set_yscale('log', nonposy='clip')
 
     ax1.set_ylim([my0, my1])
@@ -170,7 +167,7 @@ def plotcomplexpolar(metaAry, axis=-1, size=(10, 7.5), dpi=75, \
 
     ax2.set_ylabel(pylabl, color='r', fontsize=fontsize)
 
-    if degree == True:
+    if degree is True:
         py0 *= 45
         py1 *= 45
 
@@ -203,8 +200,9 @@ def plotcomplexpolar(metaAry, axis=-1, size=(10, 7.5), dpi=75, \
             elif np.sign(pt) == -1:
                 val = '-' + val
 
-            pticks_lbl.append('$' + val + '$')
+            pticks_lbl.append(f'${val}$')
 
+        ax2.set_yticks(pticks)
         ax2.set_yticklabels(pticks_lbl)
 
     for tl in ax2.get_yticklabels():
@@ -215,7 +213,7 @@ def plotcomplexpolar(metaAry, axis=-1, size=(10, 7.5), dpi=75, \
 
     ax1.set_title(title, fontsize=fontsize*1.3)
 
-    if metaAry.get_range(axis, 'log') == True:
+    if metaAry.get_range(axis, 'log') is True:
         ax1.set_xscale("log", nonposx='clip')
         ax2.set_xscale("log", nonposx='clip')
 
@@ -225,62 +223,21 @@ def plotcomplexpolar(metaAry, axis=-1, size=(10, 7.5), dpi=75, \
     ax1.set_xlabel(xlabl, fontsize=fontsize)
     ax1.set_xlim([x0, x1])
 
-
     if legend >= 0:
         lns1, lbl1 = ax1.get_legend_handles_labels()
         lns2, lbl2 = ax2.get_legend_handles_labels()
         ax1.legend(lns1 + lns2, lbl1 + lbl2, loc=legend)
 
-    ######
-
-    ## fig = figure(figsize=size, dpi = dpi)
-    ## host = SubplotHost(fig, 111)
-
-    #fig.add_subplot(host)
-    #par = host.twinx()
-
-    #host.plot(x, mag, 'b-', label=mag_label)
-    #par.plot(x, pha, 'r--', label=pha_label)
-
-    #host.grid(grid, which="both", color='g')
-
-    #host.set_xlabel(xlabl)
-    #host.set_ylabel(mylabl, color='b')
-    #par.set_ylabel(pylabl, color='r')
-
-    #if log_mag == True:
-        #host.set_yscale('log', nonposy='clip')
-
-    #host.set_xlim([x0, x1])
-    #host.set_ylim([my0, my1])
-    #par.set_ylim([py0, py1])
-
-
-    #for tl in host.get_xticklabels():
-        #tl.set_fontsize(fontsize)
-
-    #for tl in host.get_yticklabels():
-        #tl.set_color('b')
-        #tl.set_fontsize(fontsize)
-
-    #for tl in par.get_yticklabels():
-        #tl.set_color('r')
-        #tl.set_fontsize(fontsize)
-
-    ## host.set_title(title, fontsize=int(fontsize*1.3))
-    #host.set_title(title, fontsize=fontsize)
-
-    #if legend >= 0:
-        #host.legend(loc=legend)
-
     return fig, ax1, ax2
 
 
-
-def plotcomplex(metaAry, size=(10, 7.5), dpi=75, grid=True, \
-                legend=0, fontsize=15, real_label=None, imag_label=None):
+def plotcomplex(metaAry: metaArray, size: tuple[float, float] = (10, 7.5),
+                dpi: float = 75, grid: bool = True, legend: int = 0,
+                fontsize: float = 15, real_label: str = None,
+                imag_label: str = None) -> fig_twoax:
     """
-    metaArray function to do a simple 1D plot of complex array as real and imaginary parts.
+    metaArray function to do a simple 1D plot of complex array as
+    real and imaginary parts.
 
     legend:
         'best'  0
@@ -335,9 +292,9 @@ def plotcomplex(metaAry, size=(10, 7.5), dpi=75, grid=True, \
     iy0, iy1 = scale_check(iy0, iy1)
 
     # Apply unit prefix if unit is defined
-    xunit, x0, x1, xscale = prettyunit(xunit, x0, x1)
-    ryunit, ry0, ry1, ryscale = prettyunit(ryunit, ry0, ry1)
-    iyunit, iy0, iy1, iyscale = prettyunit(iyunit, iy0, iy1)
+    xunit, x0, x1, xscale = pretty_unit(xunit, x0, x1)
+    ryunit, ry0, ry1, ryscale = pretty_unit(ryunit, ry0, ry1)
+    iyunit, iy0, iy1, iyscale = pretty_unit(iyunit, iy0, iy1)
 
     if ryscale != 1:
         rdata = rdata.copy() * ryscale
@@ -356,11 +313,6 @@ def plotcomplex(metaAry, size=(10, 7.5), dpi=75, grid=True, \
 
     fig.add_subplot(host)
     par = host.twinx()
-
-    #if axis['log'][0] == False:
-    #    x = linspace(x0, x1, len(metaAry))
-    #else:
-    #    raise NotImplemented, "Log axis is not yet implemented."
 
     x = metaAry.get_axis()
 
@@ -388,13 +340,14 @@ def plotcomplex(metaAry, size=(10, 7.5), dpi=75, grid=True, \
     return fig, host, par
 
 
-
-
-def multiplot(metaAry, size=(10, 7.5), dpi=75, grid=True, \
-                legend=0, fontsize=15, real_label=None, imag_label=None, \
-                fig=None, host=None, par=None):
+def multiplot(metaAry: metaArray, size: tuple[float, float] = (10, 7.5),
+              dpi: float = 75, grid: bool = True, legend: int = 0,
+              fontsize: float = 15, real_label: str = None,
+              imag_label: str = None, fig: plt.Figure = None,
+              host: plt.Axes = None, par: plt.Axes = None) -> fig_twoax:
     """
-    metaArray function to do a simple 1D plot of complex array as real and imaginary parts.
+    metaArray function to do a simple 1D plot of complex array as real
+    and imaginary parts.
 
     legend:
         'best'  0
@@ -446,9 +399,9 @@ def multiplot(metaAry, size=(10, 7.5), dpi=75, grid=True, \
     iy1 = np.sign(iy1-imean) * ireach + imean
 
     # Apply unit prefix if unit is defined
-    xunit, x0, x1, xscale = prettyunit(xunit, x0, x1)
-    ryunit, ry0, ry1, ryscale = prettyunit(ryunit, ry0, ry1)
-    iyunit, iy0, iy1, iyscale = prettyunit(iyunit, iy0, iy1)
+    xunit, x0, x1, xscale = pretty_unit(xunit, x0, x1)
+    ryunit, ry0, ry1, ryscale = pretty_unit(ryunit, ry0, ry1)
+    iyunit, iy0, iy1, iyscale = pretty_unit(iyunit, iy0, iy1)
 
     if ryscale != 1:
         rdata = rdata.copy() * ryscale
@@ -462,16 +415,16 @@ def multiplot(metaAry, size=(10, 7.5), dpi=75, grid=True, \
 
     title = metaAry['name']
 
-    fig = figure(figsize=size, dpi=dpi)
-    host = SubplotHost(fig, 111)
+    if fig is None:
+        fig = figure(figsize=size, dpi=dpi)
+
+    if host is None:
+        host = SubplotHost(fig, 111)
 
     fig.add_subplot(host)
-    par = host.twinx()
 
-    #if axis['log'][0] == False:
-    #    x = linspace(x0, x1, len(metaAry))
-    #else:
-    #    raise NotImplemented, "Log axis is not yet implemented."
+    if par is None:
+        par = host.twinx()
 
     x = metaAry.get_axis()
 
@@ -499,11 +452,11 @@ def multiplot(metaAry, size=(10, 7.5), dpi=75, grid=True, \
     return fig, host, par
 
 
-
-
-
-def plot1d(metaAry, size=(10, 7.5), dpi=75, grid=True, legend=None, fontsize=15,\
-            fig=None, ax=None, label=None):
+def plot1d(metaAry: metaArray, size: tuple[float, float] = (10, 7.5),
+           dpi: float = 75, grid: bool = True, legend: int = None,
+           fontsize: float = 15, fig: plt.Figure = None,
+           ax: plt.Axes = None, label: str = None) -> tuple[plt.Figure,
+                                                            plt.Axes]:
     """
     metaArray function to do a simple 1D plot.
 
@@ -520,12 +473,14 @@ def plot1d(metaAry, size=(10, 7.5), dpi=75, grid=True, legend=None, fontsize=15,
         'upper center'  9
         'center'        10
 
-    label   Label for the legend display, default to metaAry['range']['label'][0]
+    label   Label for the legend display,
+            default to metaAry['range']['label'][0]
 
     """
 
     if metaAry.dtype is np.dtype('complex'):
-        return plotcomplex(metaAry, size=size, dpi=dpi, grid=grid, legend=legend, fontsize=fontsize)
+        return plotcomplex(metaAry, size=size, dpi=dpi,
+                           grid=grid, legend=legend, fontsize=fontsize)
 
     if legend is None:
         legend = -1
@@ -550,8 +505,8 @@ def plot1d(metaAry, size=(10, 7.5), dpi=75, grid=True, legend=None, fontsize=15,
     y0, y1 = scale_check(y0, y1)
 
     # Apply unit prefix if unit is defined
-    xunit, x0, x1, xscale = prettyunit(xunit, x0, x1)
-    yunit, y0, y1, yscale = prettyunit(yunit, y0, y1)
+    xunit, x0, x1, xscale = pretty_unit(xunit, x0, x1)
+    yunit, y0, y1, yscale = pretty_unit(yunit, y0, y1)
 
     if yscale != 1:
         data = data.copy() * yscale
@@ -576,12 +531,12 @@ def plot1d(metaAry, size=(10, 7.5), dpi=75, grid=True, legend=None, fontsize=15,
         x1 = max((x1, x01))
         y1 = max((y1, y01))
 
-    if axis['log'][0] == False:
+    if axis['log'][0] is False:
         x = np.linspace(x0, x1, len(metaAry))
         # x1 = metaAry.get_axis()
     else:
         x = metaAry.get_axis()
-        raise NotImplemented
+        raise NotImplementedError
 
     if label is None:
         label = axis['label'][0]
@@ -607,11 +562,16 @@ def plot1d(metaAry, size=(10, 7.5), dpi=75, grid=True, legend=None, fontsize=15,
     return fig, ax
 
 
-
-def plot2d(metaAry, size=(10, 7.5), dpi=75, fontsize=15, cmap=None, \
-            nticks=5, aspect_ratio=1.0, corient='vertical', cformat=None, \
-            show_cbar=True, vmin=None, vmax=None, interpolation='sinc', \
-            fig=None, ax=None):
+def plot2d(metaAry: metaArray, size: tuple[float, float] = (10, 7.5),
+           dpi: float = 75, fontsize: float = 15,
+           cmap: mpl.colors.Colormap = None, nticks: int = 5,
+           aspect_ratio: typing.Union[float, str] = 1.0,
+           corient: str = 'vertical',
+           cformat: typing.Union[None, str, mpl.ticker.Formatter] = None,
+           show_cbar: bool = True, vmin: float = None, vmax: float = None,
+           interpolation: str = 'sinc',
+           fig: plt.Figure = None,
+           ax: plt.Axes = None) -> tuple[plt.Figure, plt.Axes]:
     """
     metaArray function to do a simple 2D plot.
 
@@ -636,13 +596,12 @@ def plot2d(metaAry, size=(10, 7.5), dpi=75, fontsize=15, cmap=None, \
     """
 
     if cmap is None:
-        #cmap = cm.spectral
         try:
-            cmap = cm.viridis        
+            cmap = mpl.cm.viridis
         except AttributeError:
-            cmap = cm.hot
+            cmap = mpl.cm.hot
 
-    if corient is not 'horizontal':
+    if corient != 'horizontal':
         corient = 'vertical'
 
     axis = metaAry['range']
@@ -663,28 +622,9 @@ def plot2d(metaAry, size=(10, 7.5), dpi=75, fontsize=15, cmap=None, \
     else:
         try:
             ratio = float(aspect_ratio)
-        except:
-            print("*** Warning! Unrecognisable aspect ratio spec. Using the default instead.")
+        except ValueError:
+            print("Warning! Unrecognisable aspect spec. Using the default.")
             ratio = 1.0
-
-    ## Make plot with vertical (default) colorbar
-    #if size == 'default':
-        ## Default size aspect ratio is 4:3, and size to be (10, 7.5)
-        ## Adjust size according to image aspect ratio
-
-        #if corient == 'vertical':
-            #size_ratio = ratio * 0.75
-            #size = (10, 10 * size_ratio)
-        #else:
-            #size_ratio = ratio / 0.75
-            #size = (7.5 / size_ratio, 7.5)
-
-        ##diagonal =  12.5**2
-        ##size_x = (diagonal / (1 + size_ratio**2))**0.5
-        ##size_y = (diagonal / size_x**2)**0.5
-
-        ##size = (size_x, size_y)
-
 
     # Try to work out the colour scale
     if vmin is None:
@@ -705,9 +645,9 @@ def plot2d(metaAry, size=(10, 7.5), dpi=75, fontsize=15, cmap=None, \
     vunit = metaAry['unit']
 
     # Apply unit prefix if unit is defined
-    xunit, x0, x1, xscale = prettyunit(xunit, x0, x1)
-    yunit, y0, y1, yscale = prettyunit(yunit, y0, y1)
-    vunit, v0, v1, vscale = prettyunit(vunit, v0, v1)
+    xunit, x0, x1, xscale = pretty_unit(xunit, x0, x1)
+    yunit, y0, y1, yscale = pretty_unit(yunit, y0, y1)
+    vunit, v0, v1, vscale = pretty_unit(vunit, v0, v1)
 
     if vscale != 1:
         data = data.copy() * vscale
@@ -719,45 +659,50 @@ def plot2d(metaAry, size=(10, 7.5), dpi=75, fontsize=15, cmap=None, \
     ticks = np.linspace(v0, v1, nticks)
     ticks_lbl = []
 
-
-    # Matplotlib inshow data in transposed from metaArray convension
+    # Matplotlib inshow data in transposed from metaArray convention
     # And it adjust the aspect ratio based on the prefix corrected number
     ratio /= float(y1 - y0) / float(x1 - x0)
-    ratio = float(np.abs(ratio))          #  This is the number fed to matplotlib
+    #  This is the number fed to matplotlib
+    ratio = float(np.abs(ratio))
 
-    for i in range(nticks):
-        ticks_lbl.append("%(val)0.4g" % {'val':ticks[i]})
+    ticks_lbl = [f"{tick:0.4g}" for tick in ticks]
 
-    if fig == None: fig = figure(figsize=size, dpi=dpi)
+    if fig is None:
+        fig = figure(figsize=size, dpi=dpi)
 
-    if ax == None: ax = fig.add_subplot(111)
+    if ax is None:
+        ax = fig.add_subplot(111)
 
     extent = (x0, x1, y0, y1)
-    cax = ax.imshow(data.transpose()[::-1], cmap=cmap, extent=extent, \
+    cax = ax.imshow(data.transpose()[::-1], cmap=cmap, extent=extent,
                     interpolation=interpolation, vmin=v0, vmax=v1, aspect=ratio)
     if show_cbar:
-        cbar = fig.colorbar(cax, ticks=ticks, orientation=corient, format=cformat)
+        cbar = fig.colorbar(cax, ticks=ticks, orientation=corient,
+                            format=cformat)
 
-        # Add colorbar, make sure to specify tick locations to match desired ticklabels
+        # Add colorbar, make sure to specify tick locations
+        # to match desired ticklabels
+        cbar.ax.set_yticks(ticks)
         cbar.ax.set_yticklabels(ticks_lbl)
         cbar.set_label(vlabl, fontsize=fontsize)
 
     # ax.set_size(fontsize)
-    ax.set_xlabel(xlabl, fontsize=fontsize)     #   Label font size
+    ax.set_xlabel(xlabl, fontsize=fontsize)
     ax.set_ylabel(ylabl, fontsize=fontsize)
-    rcParams.update({'font.size': fontsize})    #   Value font size
+    mpl.rcParams.update({'font.size': fontsize})
 
     if fontsize is not None:
         ax.set_title(metaAry['name'], fontsize=int(fontsize*1.3))
     else:
         ax.set_title(metaAry['name'])
 
-    # fig.tight_layout()
+    fig.tight_layout()
 
     return fig, ax
 
 
-def lbl_repr(label=None, unit=None, string=None):
+def lbl_repr(label: str = None, unit: str = None,
+             string: str = None) -> str:
     """
     Format axis label and unit into a nice looking string
 
@@ -790,8 +735,7 @@ def lbl_repr(label=None, unit=None, string=None):
     return lbl
 
 
-
-def scale_check(v0, v1):
+def scale_check(v0: float, v1: float) -> tuple[float, float]:
     """
     Check if the scale limits are identical, if so, return a 0.1% difference
     between the limits

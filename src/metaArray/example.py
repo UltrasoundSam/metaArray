@@ -1,28 +1,18 @@
-#       This program is free software; you can redistribute it and/or modify
-#       it under the terms of the GNU General Public License as published by
-#       the Free Software Foundation; either version 2 of the License, or
-#       (at your option) any later version.
-#
-#       This program is distributed in the hope that it will be useful,
-#       but WITHOUT ANY WARRANTY; without even the implied warranty of
-#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#       GNU General Public License for more details.
-#
-#       You should have received a copy of the GNU General Public License
-#       along with this program; if not, write to the Free Software
-#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#       MA 02110-1301, USA.
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 24 2024 19:53
 
-'''
+@author: samhill
+
 Demo Programme that should the basics of using metaArray project
-'''
+"""
 from os.path import join
 from os import linesep
 
 from textwrap import TextWrapper
-import cStringIO
+from io import StringIO
 
-from metaArray.misc import filePath
+from .misc import filePath
 
 # Enviromental variables
 demo_dir = join(filePath(__file__).baseDir, 'example')
@@ -30,10 +20,7 @@ tty_width = 72
 partition = '-' * tty_width
 prompt = '>>> '
 
-# Current dir
-# current_dir = dirPath('./')
-
-
+# Configure text-wrapper
 wrapper = TextWrapper()
 wrapper.width = tty_width
 wrapper.replace_whitespace = False
@@ -41,20 +28,53 @@ wrapper.replace_whitespace = False
 wrapper.initial_indent = "- "
 wrapper.subsequent_indent = '- '
 
+# Define comment text wrapper
 comment_wrapper = TextWrapper()
 comment_wrapper.replace_whitespace = False
 # comment_wrapper.drop_whitespace = False
 comment_wrapper.width = tty_width
 comment_wrapper.subsequent_indent = '# '
 
-class demo_menu(object):
+
+class DemoItem:
+    """
+    Menu item
+
+    Contains pointer to menu item.
+    """
+    def __init__(self, title: str = '', parent=None, exe=None) -> None:
+        '''
+        Set up titles, etc
+        '''
+        self.title = title
+        self.parent = parent
+        self.info = ''
+        self.exe = exe
+
+    def __call__(self) -> None:
+        summary = self.exe()
+
+        if summary is not None:
+            print(linesep + ' demo summary '.center(tty_width, '-') + linesep)
+            print(summary)
+        else:
+            print(linesep + linesep)
+
+        print(' END of demo '.center(tty_width, '-') + linesep)
+
+        if self.parent is not None:
+            print(linesep + linesep)
+            return self.parent()
+
+
+class DemoMenu:
     """
     Menu object
 
     Contains a list of menu options, as well as the parent menu if exist.
     """
 
-    def __init__(self, title='', parent=None):
+    def __init__(self, title: str = '', parent=None) -> None:
         '''
         Set up Titles, etcs
         '''
@@ -63,15 +83,12 @@ class demo_menu(object):
         self.info = ''
         self.items = {}
 
-        return
-
-    def add_item(self, obj):
+    def add_item(self, obj: DemoItem) -> None:
         '''
         Add item
         '''
         obj.parent = self
         self.items[obj.title] = obj
-        return
 
     def __call__(self):
         print(partition)
@@ -85,7 +102,7 @@ class demo_menu(object):
         print(wrapper.fill(self.info))
         print(partition)
 
-        lst = self.items.keys()
+        lst = list(self.items.keys())
         lst.sort()
 
         print('\tOption\tDescription')
@@ -105,10 +122,10 @@ class demo_menu(object):
         print(partition)
 
         while True:
-            option = raw_input("Which option would you like to select? ")
+            option = input("Which option would you like to select? ")
             try:
                 option = int(option)
-            except:
+            except ValueError:
                 continue
 
             if option == quit_option:
@@ -121,7 +138,7 @@ class demo_menu(object):
             if option >= 0 and option < len(lst):
                 item = self.items[lst[option]]
 
-                if isinstance(item, demo_item):
+                if isinstance(item, DemoItem):
                     print(linesep + linesep + partition)
                     print(wrapper.fill(item.info))
 
@@ -130,107 +147,41 @@ class demo_menu(object):
 
             continue
 
-        return
 
-
-class demo_item(object):
-    """
-    Menu item
-
-    Contains pointer to menu item.
-    """
-
-    def __init__(self, title='', parent=None, exe=None):
-        '''
-        Set up titles, etc
-        '''
-        self.title = title
-        self.parent = parent
-        self.info = ''
-        self.exe = exe
-
-        return
-
-    def __call__(self):
-        summary = self.exe()
-
-        if summary is not None:
-            print(linesep + ' demo summary '.center(tty_width, '-') + linesep)
-            print(summary)
-        else:
-            print(linesep + linesep)
-
-        print(' END of demo '.center(tty_width, '-') + linesep)
-
-        if self.parent is not None:
-            print(linesep + linesep)
-            return self.parent()
-
-        return
-
-
-
-#def prcs_demo_lst(lst, summary = ''):
-    #"""
-    #lst = []
-    #lst.append("fig, ax = plot1d(ary, legend=-1)")
-    #lst.append("# fig.savefig('plot1d.png', dpi=200, format='png')")
-    #lst.append("show()")
-    #lst.append("close(fig)")
-    #"""
-
-    #for st in lst:
-        #summary += st + linesep
-        #if st == '':
-            #print(linesep)
-        #elif st[0] == '#':
-            #print(comment_wrapper.fill(st))
-        #else:
-            #print(prompt + st)
-            #exec(st)
-
-    #return summary
-
-
-def prcs_demo(code, summary=''):
-
+def prcs_demo(code: str, summary: str = '') -> str:
     # Fill the code block into IO buffer
-    str_buff = cStringIO.StringIO()
-    str_buff.write(code.strip())
+    with StringIO() as str_buff:
+        str_buff.write(code.strip())
 
-    str_buff.seek(0)
-    for st in str_buff:
-        st = st.strip()
-        summary += st + linesep
+        str_buff.seek(0)
+        for st in str_buff:
+            st = st.strip()
+            summary += st + linesep
 
-        if st == '':
-            print(linesep)
-        elif st[0] == '#':
-            print(comment_wrapper.fill(st))
-        else:
-            print(prompt + st)
-            exec(st)
-            #try: exec(st)
-            #except: return
+            if st == '':
+                print(linesep)
+            elif st[0] == '#':
+                print(comment_wrapper.fill(st))
+            else:
+                print(prompt + st)
+                exec(st)
 
-    str_buff.close()
     return summary
 
 
-#
 # Begin example codes
 ########################
-main_menu = demo_menu(title='metaArray demos')
+main_menu = DemoMenu(title='metaArray demos')
 main_menu.info = 'This is a list of demos to illustrate the usage of metaArray.'
 
 ###############################################################################
 # I/O demos
 ########################
-drv_menu = demo_menu(title='File I/O demos')
-drv_menu.info = 'This is a list of demos to illustrate the usage file I/O with metaArray.'
+drv_menu = DemoMenu(title='File I/O demos')
+drv_menu.info = 'This is a list of demos to illustrate the usage file I/O with metaArray.'  # noqa: E501
 
 
-def isf_demo():
+def isf_demo() -> str:
     """
     Example on Tek isf file reader
     """
@@ -261,11 +212,13 @@ def isf_demo():
 
     return prcs_demo(code)
 
-demo_isf = demo_item(title='Read Tektronix isf file.', exe=isf_demo)
-demo_isf.info = 'This demo will illustrate the usage of Tek isf file interpreter'
+
+demo_isf = DemoItem(title='Read Tektronix isf file.', exe=isf_demo)
+demo_isf.info = 'This demo will illustrate the usage of Tek .isf interpreter'
 drv_menu.add_item(demo_isf)
 
-def DPO2000_csv_demo():
+
+def DPO2000_csv_demo() -> str:
     """
     Example on DPO2000 csv file reader
     """
@@ -296,11 +249,14 @@ def DPO2000_csv_demo():
 
     return prcs_demo(code)
 
-demo_DPO2000_csv = demo_item(title='Read Tektronix DPO2000 csv file.', exe=DPO2000_csv_demo)
-demo_DPO2000_csv.info = 'This demo will illustrate the usage of Tek DPO2000 series csv file interpreter'
+
+demo_DPO2000_csv = DemoItem(title='Read Tektronix DPO2000 csv file.',
+                            exe=DPO2000_csv_demo)
+demo_DPO2000_csv.info = 'This demo will illustrate the usage of Tek DPO2000 series csv file interpreter'  # noqa: E501
 drv_menu.add_item(demo_DPO2000_csv)
 
-def TDS2000_csv_demo():
+
+def TDS2000_csv_demo() -> str:
     """
     Example on TDS2000 csv file reader
     """
@@ -333,11 +289,14 @@ def TDS2000_csv_demo():
 
     return prcs_demo(code)
 
-demo_TDS2000_csv = demo_item(title='Read Tektronix TDS2000 csv file.', exe=TDS2000_csv_demo)
-demo_TDS2000_csv.info = 'This demo will illustrate the usage of Tek TDS2000 series csv file interpreter'
+
+demo_TDS2000_csv = DemoItem(title='Read Tektronix TDS2000 csv file.',
+                            exe=TDS2000_csv_demo)
+demo_TDS2000_csv.info = 'This demo will illustrate the usage of Tek TDS2000 series csv file interpreter'  # noqa: E501
 drv_menu.add_item(demo_TDS2000_csv)
 
-def pout_hist_demo():
+
+def pout_hist_demo() -> str:
     """
     Example on PZFlex POUT file reader
     """
@@ -373,13 +332,15 @@ def pout_hist_demo():
 
     return prcs_demo(code)
 
-demo_pout_hist = demo_item(title='Read PZFlex flxhst file.', exe=pout_hist_demo)
+
+demo_pout_hist = DemoItem(title='Read PZFlex flxhst file.', exe=pout_hist_demo)
 demo_pout_hist.info = 'This demo will illustrate the usage of PZFlex flxhst \
- file interpreter. flxhst files are generated by invoking the POUT HIST command \
- in the PZFlex input file.'
+ file interpreter. flxhst files are generated by invoking the POUT HIST \
+ command in the PZFlex input file.'
 drv_menu.add_item(demo_pout_hist)
 
-def data_out1_demo():
+
+def data_out1_demo() -> str:
     """
     Example on PZFlex data out1 file reader
     """
@@ -418,7 +379,7 @@ def data_out1_demo():
     from metaArray.drv_pylab import plot2d
     from matplotlib.pyplot import show, close
 
-    fig, ax = plot2d(ary, size = (10, 5), aspect_ratio = 'xy', corient='horizontal')
+    fig, ax = plot2d(ary, size = (10, 5), aspect_ratio = 'xy', corient='horizontal')  # noqa: E501
     # fig.savefig('plot2d.png', format='png')
     show()
     close(fig)
@@ -426,13 +387,15 @@ def data_out1_demo():
 
     return prcs_demo(code)
 
-demo_data_out1 = demo_item(title='Read PZFlex flxdato file.', exe=data_out1_demo)
+
+demo_data_out1 = DemoItem(title='Read PZFlex flxdato file.', exe=data_out1_demo)
 demo_data_out1.info = 'This demo will illustrate the usage of PZFlex flxdato \
  file interpreter. flxdato files are generated by invoking the DATA OUT1 \
  command in the PZFlex input file.'
 drv_menu.add_item(demo_data_out1)
 
-def HDF5_demo():
+
+def HDF5_demo() -> str:
     """
     Example on HDF5 file reader/writer
     """
@@ -458,13 +421,17 @@ def HDF5_demo():
 
     return prcs_demo(code)
 
-demo_HDF5 = demo_item(title='Read/write metaArray into HDF5 file.', exe=HDF5_demo)
+
+demo_HDF5 = DemoItem(title='Read/write metaArray into HDF5 file.',
+                     exe=HDF5_demo)
 demo_HDF5.info = 'This demo will illustrate the usage of saving/loading \
  metaArray into/from HDF5 file.'
 drv_menu.add_item(demo_HDF5)
 
 main_menu.add_item(drv_menu)
-###################      END I/O demo       ###################################
+
+###############################################################################
+#                        END I/O demo                                         #
 ###############################################################################
 ###############################################################################
 
@@ -472,12 +439,13 @@ main_menu.add_item(drv_menu)
 ###############################################################################
 # Plotting demos
 ###############################################################################
-plot_menu = demo_menu(title='Plotting and visualisation demos')
+plot_menu = DemoMenu(title='Plotting and visualisation demos')
 plot_menu.info = 'This is a list of demos to illustrate the usage metaArray \
 aware plotting and visualisation funtions. The plotting routines are based on \
 matplotlib.'
 
-def multi_1d_demo():
+
+def multi_1d_demo() -> str:
     """
     Example on multiple 1D plot usage
     """
@@ -504,9 +472,12 @@ def multi_1d_demo():
     #*********************
     from metaArray.drv_pylab import plot1d
     from matplotlib.pyplot import show, close
-    fig, ax = plot1d(ary1[72e-6:100e-6], size = (20, 15), label = 'First signal')
-    fig, ax = plot1d(ary2[72e-6:100e-6], size = (20, 15), label = 'Second signal', fig=fig, ax=ax)
-    fig, ax = plot1d(ary3[72e-6:100e-6], size = (20, 15), label = 'Third signal', fig=fig, ax=ax)
+    fig, ax = plot1d(ary1[72e-6:100e-6], size = (20, 15), \
+                     label = 'First signal')
+    fig, ax = plot1d(ary2[72e-6:100e-6], size = (20, 15), \
+                     label = 'Second signal', fig=fig, ax=ax)
+    fig, ax = plot1d(ary3[72e-6:100e-6], size = (20, 15), \
+                     label = 'Third signal', fig=fig, ax=ax)
     ax.legend(loc=0)
     ax.set_title('Comparison of Generated signal on bent coil', fontsize=20)
     fig.savefig('demo_multi_1d.png', format='png')
@@ -516,12 +487,15 @@ def multi_1d_demo():
 
     return prcs_demo(code)
 
-demo_multi_1d = demo_item(title='Plotting multiple 1D (A-scan) data.', exe=multi_1d_demo)
+
+demo_multi_1d = DemoItem(title='Plotting multiple 1D (A-scan) data.',
+                         exe=multi_1d_demo)
 demo_multi_1d.info = 'This demo will illustrate the usage of the plot1d \
 interface to put multiple 1D (A-scan) metaArray on the same plot.'
 plot_menu.add_item(demo_multi_1d)
 
-def plot1d_demo():
+
+def plot1d_demo() -> str:
     """
     Example on matplotlib 1D plot interface
     """
@@ -544,22 +518,26 @@ def plot1d_demo():
 
     return prcs_demo(code)
 
-demo_plot1d = demo_item(title='Plotting of 1D (A-scan) data.', exe=plot1d_demo)
+
+demo_plot1d = DemoItem(title='Plotting of 1D (A-scan) data.', exe=plot1d_demo)
 demo_plot1d.info = 'This demo will illustrate the usage of the plot1d function \
 for metaArray.'
 plot_menu.add_item(demo_plot1d)
 
-def plot2d_demo():
+
+def plot2d_demo() -> str:
     """
     Example on matplotlib 2D plot interface
     """
     code = """
     # Load some data as example
     #***************************
-    from cPickle import load
-    f = open('""" + join(demo_dir, 'rel_amplitude.pickle') + """', 'rb')
-    a = load(f).transpose()
-    f.close()
+    from pickle import load
+    filename = '""" + join(demo_dir, 'rel_amplitude.pickle') + """'
+    with open(filename, 'rb') as f: \
+    \t    a = load(f, encoding='latin1')
+
+    a = a.T
 
     # Construct metaArray from numpy ndarray
     #****************************************
@@ -585,19 +563,21 @@ def plot2d_demo():
     from metaArray.drv_pylab import plot2d
     from matplotlib.pyplot import show, close
     fig, ax = plot2d(ary)
-    fig.savefig('demo_plot2d', dpi=400, format='png')
+    fig.savefig('demo_plot2d.png', dpi=400, format='png')
     show()
     close(fig)
     """
 
     return prcs_demo(code)
 
-demo_plot2d = demo_item(title='Plotting of 2D (B-scan) data.', exe=plot2d_demo)
+
+demo_plot2d = DemoItem(title='Plotting of 2D (B-scan) data.', exe=plot2d_demo)
 demo_plot2d.info = 'This demo will illustrate the usage of the plot2d function \
 for metaArray.'
 plot_menu.add_item(demo_plot2d)
 
-def plot_complex_demo():
+
+def plot_complex_demo() -> str:
     """
     Example on matplotlib complex array plotting interface
     """
@@ -627,29 +607,32 @@ def plot_complex_demo():
 
     return prcs_demo(code)
 
-demo_plot_complex = demo_item(title='Plotting of complex number metaArray.', exe=plot_complex_demo)
+
+demo_plot_complex = DemoItem(title='Plotting of complex number metaArray.',
+                             exe=plot_complex_demo)
 demo_plot_complex.info = 'This demo will illustrate the usage of the \
 plotcomplex, and plotcomplexpolar function for metaArray.'
 plot_menu.add_item(demo_plot_complex)
 
 
 main_menu.add_item(plot_menu)
-#################      END visualisation demo       ###########################
+
+###############################################################################
+# ################      END visualisation demo       ######################## #
 ###############################################################################
 ###############################################################################
-
-
 
 
 ###############################################################################
 # Miscellaneous demos                                                         #
 ###############################################################################
-misc_menu = demo_menu(title='Misc. (non-metaArray) demos')
-misc_menu.info = 'This is a list of demos for miscellaneous non-metaArray aware \
-classes and functions. These are useful helper classes and function used by \
-various metaArray components.'
+misc_menu = DemoMenu(title='Misc. (non-metaArray) demos')
+misc_menu.info = 'This is a list of demos for miscellaneous non-metaArray \
+aware classes and functions. These are useful helper classes and function \
+used by various metaArray components.'
 
-def cplx_trig_func_demo():
+
+def cplx_trig_func_demo() -> str:
     """
     Complex Trigonometric function demo
     """
@@ -668,7 +651,9 @@ def cplx_trig_func_demo():
 
     return prcs_demo(code)
 
-demo_cplx_trig_func = demo_item(title='Complex trigonometry function generator.', exe=cplx_trig_func_demo)
+
+demo_cplx_trig_func = DemoItem(title='Complex trigonometry function generator.',
+                               exe=cplx_trig_func_demo)
 demo_cplx_trig_func.info = 'This demo will illustrate the usage of the \
 cplx_trig_func object, it will return a complex numpy ndarray based on the \
 given combinations of the following parameters (they are also attributes of \
@@ -680,34 +665,38 @@ to be specify. InsufficientInput error will be raised if the instanc is called\
  before the parameters are sufficiently defined.'
 misc_menu.add_item(demo_cplx_trig_func)
 
-def misc_units_demo():
+
+def misc_units_demo() -> str:
     """
     Misc. unit formatting
     """
     code = """
     # Format number in engineering units
     #************************************
-    from metaArray.misc import engUnit
-    print(engUnit(1.23456e7, unit = 'eV', sigfig=3))
-    print(engUnit(1.23456e8, unit = 'eV', sigfig=3))
-    print(engUnit(1.23456e9, unit = 'eV', sigfig=4))
+    from metaArray.misc import eng_unit
+    print(eng_unit(1.23456e7, unit = 'eV', sigfig=3))
+    print(eng_unit(1.23456e8, unit = 'eV', sigfig=3))
+    print(eng_unit(1.23456e9, unit = 'eV', sigfig=4))
 
     # Find out a suitable SI unit prefix for a given number
     #*******************************************************
-    from metaArray.misc import unitPrefix
-    num, name, prefix, exponent = unitPrefix(1.23456e7)
+    from metaArray.misc import unit_prefix
+    num, name, prefix, exponent = unit_prefix(1.23456e7)
     print('The scaled number is: ' + str(num)); print('SI unit \
-prefix name is: ' + name); print('SI unit prefix is: ' + prefix); print('The \
-exponent to scale number with is: ' + str(exponent))
+    prefix name is: ' + name); print('SI unit prefix is: ' + prefix); \
+    print('The exponent to scale number with is: ' + str(exponent))
     """
 
     return prcs_demo(code)
 
-demo_misc_units = demo_item(title='Work out suitable SI unit prefixes.', exe=misc_units_demo)
+
+demo_misc_units = DemoItem(title='Work out suitable SI unit prefixes.',
+                           exe=misc_units_demo)
 demo_misc_units.info = ''
 misc_menu.add_item(demo_misc_units)
 
-def flist_demo():
+
+def flist_demo() -> str:
     """
     Misc obtaining a list of files
     """
@@ -721,13 +710,15 @@ def flist_demo():
     # You can also specify a particular file name extension, and \
 whether or not to search the subdirectories.
     #**************************************************************************
-    flist = file_list('""" + demo_dir + """', ext = 'flxhst', SubDir = False)
+    flist = file_list('""" + demo_dir + """', ext = 'flxhst', sub_dir = False)
     for fpath in flist: print('* ' + fpath)
     """
 
     return prcs_demo(code)
 
-demo_flist = demo_item(title='Get a list of files under a given directory.', exe=flist_demo)
+
+demo_flist = DemoItem(title='Get a list of files under a given directory.',
+                      exe=flist_demo)
 demo_flist.info = 'This demo illustrate the usage of the file_list function, \
 it will obtain a list of files under a given directory. It has the option to \
 search for subdirectories (disabled by default), and return only those with \
@@ -735,16 +726,17 @@ matching file name extension.'
 misc_menu.add_item(demo_flist)
 
 main_menu.add_item(misc_menu)
-###################      END I/O demo       ###################################
+
 ###############################################################################
+# #################      END I/O demo       ################################# #
+###############################################################################
+
+###############################################################################
+# #################      General Demos      ################################# #
 ###############################################################################
 
 
-
-# General demos
-#########################
-
-def basic_demo():
+def basic_demo() -> str:
     """
     Basic metaArray usage
     """
@@ -814,11 +806,13 @@ def basic_demo():
 
     return prcs_demo(code)
 
-demo_basic = demo_item(title='metaArray basic usage.', exe=basic_demo)
+
+demo_basic = DemoItem(title='metaArray basic usage.', exe=basic_demo)
 demo_basic.info = 'This demo will illustrate the basic usage of metaArray.'
 main_menu.add_item(demo_basic)
 
-def general_demo():
+
+def general_demo() -> str:
     """
     Example on meta functions
     """
@@ -849,7 +843,9 @@ def general_demo():
     #**************************************************************
     from metaArray.metaFunc import padding_calc
     # Say 1024 points between 0 - 3kHz
-    fary = rfft(ary, n = padding_calc(ary, min_freq = 0, max_freq = 1e3, resolution = 1024))
+    fary = rfft(ary, n = padding_calc(ary, min_freq = 0, \
+                                      max_freq = 1e3, \
+                                      resolution = 1024))
     fary = abs(fary)[:1e3].log10()
     fig, ax = plot1d(fary, legend=-1)
     fig.savefig('demo_general_2.png', format='png')
@@ -910,16 +906,14 @@ def general_demo():
 
     return prcs_demo(code)
 
-demo_general = demo_item(title='metaArray general usage.', exe=general_demo)
-demo_general.info = 'This demo will illustrate the usage of some of the more advanced \
-usages of metaArray functions.'
+
+demo_general = DemoItem(title='metaArray general usage.', exe=general_demo)
+demo_general.info = 'This demo will illustrate the usage of some of the more \
+advanced usages of metaArray functions.'
 main_menu.add_item(demo_general)
 
 
-####################################
-##
-####################################
-def hist_demo():
+def hist_demo() -> str:
     """
     Example on meta functions
     """
@@ -956,17 +950,21 @@ such as by rounding it to the nearest integer value, but the steps need not be\
 
     return prcs_demo(code)
 
-demo_hist = demo_item(title='metaArray histogram usage.', exe=hist_demo)
+
+demo_hist = DemoItem(title='metaArray histogram usage.', exe=hist_demo)
 demo_hist.info = 'This demo will illustrate how to bin a metaArray into a \
 histogram.'
 main_menu.add_item(demo_hist)
 
-###################      END General demo       ###############################
+
 ###############################################################################
+# #################      END General demo       ############################# #
 ###############################################################################
+
 
 def demo():
     return main_menu()
+
 
 if __name__ == "__main__":
     main_menu()
