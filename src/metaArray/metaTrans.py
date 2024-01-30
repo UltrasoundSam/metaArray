@@ -73,7 +73,7 @@ def stfft(metAry: metaArray, tres: int = 100, fres: int = None,
     length = int(round(2 * len(metAry) / float(tres)))
 
     # List of (short) time window starting points
-    winlst = sp.linspace(0, len(metAry) - length, tres).round().astype(int)
+    winlst = np.linspace(0, len(metAry) - length, tres).round().astype(int)
 
     # Native RFFT frequency resolution to Nyquist
     lfres = int(np.floor(length/2.0)+1)
@@ -273,23 +273,23 @@ def cwt(x: metaArray, wavelet: MotherMorlet, scale0: typing.Union[int, float],
         scale0 = np.log(scale0)/np.log(scale)
         scale1 = np.log(scale1)/np.log(scale)
         # print "*** num", scale0, scale1, res, scale
-        scl_lst = sp.logspace(scale0, scale1, res, base=scale)
+        scl_lst = np.logspace(scale0, scale1, res, base=scale)
         prange['log'][1] = scale
     elif scale is True:
         # Log scale applied, use default base
         scale0 = np.log(scale0)/np.log(10)
         scale1 = np.log(scale1)/np.log(10)
         # print "*** log", scale0, scale1, res, scale
-        scl_lst = sp.logspace(scale0, scale1, res, base=10)
+        scl_lst = np.logspace(scale0, scale1, res, base=10)
         prange['log'][1] = 10
     elif scale == 'linscal':
         # print "*** lin", scale0, scale1, res, scale
         # Log scale is not applied, everything is linear
-        scl_lst = sp.linspace(scale0, scale1, res)
+        scl_lst = np.linspace(scale0, scale1, res)
     elif scale == 'linfreq':
         scale0 = 1 / scale0
         scale1 = 1 / scale1
-        scl_lst = sp.linspace(scale0, scale1, res)
+        scl_lst = np.linspace(scale0, scale1, res)
         scl_lst = 1 / scl_lst
     else:
         raise ValueError(f"Log scale descriptor can only be int, \

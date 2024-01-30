@@ -843,8 +843,8 @@ def general_demo() -> str:
     #**************************************************************
     from metaArray.metaFunc import padding_calc
     # Say 1024 points between 0 - 3kHz
-    fary = rfft(ary, n = padding_calc(ary, min_freq = 0,
-                                      max_freq = 1e3,
+    fary = rfft(ary, n = padding_calc(ary, min_freq = 0, \
+                                      max_freq = 1e3, \
                                       resolution = 1024))
     fary = abs(fary)[:1e3].log10()
     fig, ax = plot1d(fary, legend=-1)

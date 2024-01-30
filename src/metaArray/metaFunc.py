@@ -288,7 +288,8 @@ def meta_resample(metAry: metaArray, rate: float = False,
         length = meta_fir_len(ary, length)
 
     # resize the data
-    ary.data = spline_resize(ary.data, n, l=length, window=window, order=order)
+    ary.data = spline_resize(ary.data, int(n), length=length,
+                             window=window, order=order)
 
     # Update the meta info
     ary.update_range()
