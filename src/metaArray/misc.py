@@ -252,9 +252,9 @@ class cplx_trig_func:
 
             # length is now identified
             if samp_rate is not False:
-                pts = float(length) * float(samp_rate)
+                pts = int(float(length) * float(samp_rate))
             elif dt is not False:
-                pts = float(length) / float(dt)
+                pts = int(float(length) / float(dt))
             else:
                 raise InsufficientInput("Either samp_rate (sampling rate) or dt (sampling interval) is needed to define pts (number of points)")  # noqa: E501
 

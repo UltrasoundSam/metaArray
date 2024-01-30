@@ -12,7 +12,7 @@ from os import linesep
 from textwrap import TextWrapper
 from io import StringIO
 
-from metaArray.misc import filePath
+from .misc import filePath
 
 # Enviromental variables
 demo_dir = join(filePath(__file__).baseDir, 'example')
@@ -671,18 +671,18 @@ def misc_units_demo() -> str:
     code = """
     # Format number in engineering units
     #************************************
-    from metaArray.misc import engUnit
-    print(engUnit(1.23456e7, unit = 'eV', sigfig=3))
-    print(engUnit(1.23456e8, unit = 'eV', sigfig=3))
-    print(engUnit(1.23456e9, unit = 'eV', sigfig=4))
+    from metaArray.misc import eng_unit
+    print(eng_unit(1.23456e7, unit = 'eV', sigfig=3))
+    print(eng_unit(1.23456e8, unit = 'eV', sigfig=3))
+    print(eng_unit(1.23456e9, unit = 'eV', sigfig=4))
 
     # Find out a suitable SI unit prefix for a given number
     #*******************************************************
-    from metaArray.misc import unitPrefix
-    num, name, prefix, exponent = unitPrefix(1.23456e7)
+    from metaArray.misc import unit_prefix
+    num, name, prefix, exponent = unit_prefix(1.23456e7)
     print('The scaled number is: ' + str(num)); print('SI unit \
-prefix name is: ' + name); print('SI unit prefix is: ' + prefix); print('The \
-exponent to scale number with is: ' + str(exponent))
+    prefix name is: ' + name); print('SI unit prefix is: ' + prefix); \
+    print('The exponent to scale number with is: ' + str(exponent))
     """
 
     return prcs_demo(code)
@@ -708,7 +708,7 @@ def flist_demo() -> str:
     # You can also specify a particular file name extension, and \
 whether or not to search the subdirectories.
     #**************************************************************************
-    flist = file_list('""" + demo_dir + """', ext = 'flxhst', SubDir = False)
+    flist = file_list('""" + demo_dir + """', ext = 'flxhst', sub_dir = False)
     for fpath in flist: print('* ' + fpath)
     """
 
