@@ -472,11 +472,11 @@ def multi_1d_demo() -> str:
     #*********************
     from metaArray.drv_pylab import plot1d
     from matplotlib.pyplot import show, close
-    fig, ax = plot1d(ary1[72e-6:100e-6],
-                     size = (20, 15), label = 'First signal')
-    fig, ax = plot1d(ary2[72e-6:100e-6], size = (20, 15),
+    fig, ax = plot1d(ary1[72e-6:100e-6], size = (20, 15), \
+                     label = 'First signal')
+    fig, ax = plot1d(ary2[72e-6:100e-6], size = (20, 15), \
                      label = 'Second signal', fig=fig, ax=ax)
-    fig, ax = plot1d(ary3[72e-6:100e-6], size = (20, 15),
+    fig, ax = plot1d(ary3[72e-6:100e-6], size = (20, 15), \
                      label = 'Third signal', fig=fig, ax=ax)
     ax.legend(loc=0)
     ax.set_title('Comparison of Generated signal on bent coil', fontsize=20)
@@ -532,10 +532,12 @@ def plot2d_demo() -> str:
     code = """
     # Load some data as example
     #***************************
-    from cPickle import load
-    f = open('""" + join(demo_dir, 'rel_amplitude.pickle') + """', 'rb')
-    a = load(f).transpose()
-    f.close()
+    from pickle import load
+    filename = '""" + join(demo_dir, 'rel_amplitude.pickle') + """'
+    with open(filename, 'rb') as f: \
+    \t    a = load(f, encoding='latin1')
+
+    a = a.T
 
     # Construct metaArray from numpy ndarray
     #****************************************
@@ -561,7 +563,7 @@ def plot2d_demo() -> str:
     from metaArray.drv_pylab import plot2d
     from matplotlib.pyplot import show, close
     fig, ax = plot2d(ary)
-    fig.savefig('demo_plot2d', dpi=400, format='png')
+    fig.savefig('demo_plot2d.png', dpi=400, format='png')
     show()
     close(fig)
     """
