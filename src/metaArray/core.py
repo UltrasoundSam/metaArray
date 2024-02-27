@@ -216,14 +216,32 @@ class metaArray:
                 if key != 'range':
                     # if not range, can simply try to update value
                     try:
-                        self_info[key] = deepcopy(info[key])
+                        value = deepcopy(info[key])
+
+                        if isinstance(value, bytes):
+                            # Make sure values are strings not bytes
+                            value = value.decode()
+
+                        self_info[key] = value
                     except KeyError:
                         # Value not defined, continuing
                         continue
                 else:
                     # Iterate over 'range' dict
                     for key2, val in info['range'].items():
-                        self_info['range'][key2] = deepcopy(val)
+                        value = deepcopy(val)
+
+                        # Make sure values are strings not bytes
+                        if isinstance(value, bytes):
+                            value = value.decode()
+                        elif isinstance(value, list):
+                            try:
+                                value = [entry.decode() for entry
+                                         in value]
+                            except AttributeError:
+                                pass
+
+                        self_info['range'][key2] = value
 
         # Assemble the metaArray
         self.data = self_data
