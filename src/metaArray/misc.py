@@ -860,7 +860,6 @@ def buffered_search(f: typing.IO, string: typing.Union[str, bytes],
     f_pos = start
 
     while True:
-        print(f_pos)
         f.seek(f_pos)
         buf = f.read(buffer_size)
 
