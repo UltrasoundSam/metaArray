@@ -1021,7 +1021,7 @@ class metaArray:
         """
         Peak to peak value of the data array
         """
-        return self.data.ptp(axis)
+        return np.ptp(self.data, axis=axis)
 
     def sum(self, axis: int = None) -> typing.Union[float, npt.NDArray]:
         """

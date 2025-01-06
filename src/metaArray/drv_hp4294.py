@@ -28,7 +28,7 @@ from .misc import gettypecode, timestamp
 
 
 # Alias for type hinting
-np_fc = npt.NDArray[typing.Union[np.float_, np.complex_]]
+np_fc = npt.NDArray[typing.Union[np.float64, np.complex128]]
 
 
 class HP4294A:
@@ -359,8 +359,8 @@ class HP4294A:
 
         ################################################################
 
-        if reply is False:                  # Not expecting to receive anything,
-            sock.close()                    # close socket straight away
+        if reply is False:              # Not expecting to receive anything,
+            sock.close()                # close socket straight away
             if debug:
                 print('*** Reply is not expected.')
                 print('(-x Closed socket to instrument.')
@@ -461,7 +461,7 @@ class HP4294A:
                             # 3 Got enough to analyse the header
                             try:
                                 # 4 Assemble the message received so far
-                                # 4 Try to guess the expected single-data length
+                                # 4 Guess the expected single-data length
                                 exp_len = int(msg[2:8])
                             except ValueError:
                                 # 4 Really couldnt guess, assume ASCII
@@ -547,8 +547,8 @@ class HP4294A:
         """
         Set measurement type.
 
-        # MEAS {IMPH|IRIM|LSR|LSQ|CSR|CSQ|CSD|AMPH|ARIM|LPG|LPQ|CPG|CPQ|CPD|COMP
-        #       |IMLS|IMCS|IMLP|IMCP|IMRS|IMQ|IMD|LPR|CPR}
+        # MEAS {IMPH|IRIM|LSR|LSQ|CSR|CSQ|CSD|AMPH|ARIM|LPG|LPQ|CPG|CPQ|CPD|
+        #       COMP|IMLS|IMCS|IMLP|IMCP|IMRS|IMQ|IMD|LPR|CPR}
         """
 
         if measurement in self.meas_dict:
@@ -624,7 +624,7 @@ class HP4294A:
         2 Specifies bandwidth 2.
         3 Specifies bandwidth 3.
         4 Specifies bandwidth 4.
-        5 Specifies bandwidth 5 (longest measurement time, accurate measurement)
+        5 Specifies bandwidth 5 (longest time, accurate measurement)
         """
 
         bw = int(round(bandwidth))
@@ -1234,7 +1234,7 @@ class HP4294A:
 
         Sets the oscillator (OSC) power level. To set the oscillator power
         level of each segment when creating the list sweep table, also use this
-        command. To select voltage or current to set the level, use the “POWMOD”
+        command. To select voltage or current to set the level, use “POWMOD”
         command on page 404.
         POWE?
 

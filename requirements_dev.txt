@@ -1,0 +1,6 @@
+tox>=3
+pytest>=6.2
+pytest-cov>=2.12
+flake8>=3.8
+flake8-pyproject>=1.2
+Sphinx>=5.0.1

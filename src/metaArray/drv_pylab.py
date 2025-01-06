@@ -675,7 +675,8 @@ def plot2d(metaAry: metaArray, size: tuple[float, float] = (10, 7.5),
 
     extent = (x0, x1, y0, y1)
     cax = ax.imshow(data.transpose()[::-1], cmap=cmap, extent=extent,
-                    interpolation=interpolation, vmin=v0, vmax=v1, aspect=ratio)
+                    interpolation=interpolation, vmin=v0, vmax=v1,
+                    aspect=ratio)
     if show_cbar:
         cbar = fig.colorbar(cax, ticks=ticks, orientation=corient,
                             format=cformat)

@@ -159,7 +159,8 @@ class CSVFile:
         Return the column of data as is
         """
         if key > self.cols:
-            raise IndexError(f"list index ({key}) out of range ({self.cols-1})")
+            msg = f"list index ({key}) out of range ({self.cols-1})"
+            raise IndexError(msg)
 
         with open(self.file_path, 'r') as f:
             idx = self.idx
@@ -386,7 +387,7 @@ def to_csv(metAry: metaArray, path: str, debug: bool = False,
 
             f.write(key + FD + val + LS)
 
-        # Write out the content, format depends on the number of data dimensions
+        # Format depends on the number of data dimensions
         if data.ndim == 1:
             # One dimentional data, write out the index - value pairs
 
