@@ -122,7 +122,7 @@ def stfft(metAry: metaArray, tres: int = 100, fres: int = None,
         if gfres > lfres:
             n = (gfres - 1) * 2
         elif gfres < lfres:
-            # No need for padding, but throwing away freq resolution for nothing
+            # No need for padding, but throwing away freq resolution for nada
             if debug:
                 print("Warning, frequency resolution is artificially limited")
         # else gfres = lfres, no need for padding, native fres is just right
@@ -310,7 +310,8 @@ def cwt(x: metaArray, wavelet: MotherMorlet, scale0: typing.Union[int, float],
             print(f"\t line number: {i}\t scale: {str(scl_lst[i])}" +
                   f"\t data length: {len(x.data)}\t wavelet length: " +
                   str(len(d_wavelet)))
-            raise ValueError("Warning: Daughter wavelet is longer than itself!")
+            msg = "Warning: Daughter wavelet is longer than itself!"
+            raise ValueError(msg)
         else:
             line = sp.signal.convolve(data, d_wavelet, mode='same')
 

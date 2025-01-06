@@ -15,7 +15,7 @@ import metaArray as ma
 
 
 @pytest.fixture
-def magic_square() -> npt.NDArray[np.float_]:
+def magic_square() -> npt.NDArray[np.float64]:
     '''Create a magic square for data to pass into metaArray
 
     Creates a 2d array of with length 5 that each column/row sums
@@ -108,7 +108,7 @@ def test_ptp(meta_square: ma.metaArray, magic_square: npt.NDArray[np.int_],
              axis: int) -> None:
     '''Tests to see whether metaArray behaves the same as numpy'''
     meta_max = meta_square.ptp(axis=axis)
-    np_max = magic_square.ptp(axis=axis)
+    np_max = np.ptp(magic_square, axis=axis)
     assert np.array_equal(meta_max, np_max)
 
 

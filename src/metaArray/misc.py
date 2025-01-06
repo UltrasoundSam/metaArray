@@ -95,8 +95,8 @@ class filePath:
         self.exist = os.access(path, os.F_OK)
         self.baseDir, fname = os.path.split(path)
 
-        # Modify the behaviour if the file does not exit, check if the directory
-        # is writable instead
+        # Modify the behaviour if the file does not exit, check if
+        # the directory is writable instead
         if not self.exist:
             self.write = os.access(self.baseDir, os.W_OK)
 
@@ -152,7 +152,7 @@ class cplx_trig_func:
         # Private vars
         self.flg_resolved = False
 
-    def __call__(self) -> npt.NDArray[np.complex_]:
+    def __call__(self) -> npt.NDArray[np.complex128]:
         """
         Retrun the complex trigonometic oscillation function
         """
@@ -205,7 +205,7 @@ class cplx_trig_func:
 
         return desc
 
-    def get_radian_space(self) -> npt.NDArray[np.float_]:
+    def get_radian_space(self) -> npt.NDArray[np.float64]:
         """
         Return the radian space array of the complex trigonometic
         oscillation object.
@@ -364,7 +364,7 @@ class MotherMorlet:
         self.flg_complete = complete
         self.flg_same_len = same_len
 
-    def __call__(self, scale: float) -> npt.NDArray[np.complex_]:
+    def __call__(self, scale: float) -> npt.NDArray[np.complex128]:
         """
         Scale relative to the mother wavelet
 
@@ -393,7 +393,7 @@ class MotherMorlet:
             desc += f"\t {self.name}{os.linesep}"
 
         desc += f"\t Number of points: {self.length}{os.linesep}"
-        desc += f"\t Window range: -{self.s:1.2f}𝜋 to {self.s:1.2}𝜋{os.linesep}"
+        desc += f"\t Window range: -{self.s:1.2f}𝜋 to {self.s:1.2}𝜋{os.linesep}"  # noqa: E501
         desc += f"\t Unit Amplitude: {self.Amplitude}{os.linesep}"
         desc += f"\t Has a characteristic scale of: {self.scale}*2*𝜋"
         desc += os.linesep
@@ -620,7 +620,7 @@ def resample(time: npt.ArrayLike, data: npt.ArrayLike,
 
 def filtfilt(b: npt.ArrayLike, a: npt.ArrayLike, x: npt.ArrayLike,
              axis: int = -1, padtype: str = 'odd',
-             padlen: int = None) -> npt.NDArray[np.float_]:
+             padlen: int = None) -> npt.NDArray[np.float64]:
     """
     Local substitution of the scipy.signal.filtfilt funtion.
 

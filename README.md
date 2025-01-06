@@ -13,7 +13,7 @@ Requirements
 
 Before installing, make sure that you have installed all of the prerequiste dependancies:
 
-	Python 		- (Tested on 2.6 and 2.7)							(https://www.python.org/)
+	Python 		- (Tested on 3.11 and 3.12)							(https://www.python.org/)
 	Numpy		- For data processing and scientific computing		(http://www.numpy.org/)
 	Matplotlib	- For plotting										(http://matplotlib.org/)
 	H5Py		- For stable and cross platform data storage		(http://www.h5py.org/)
@@ -46,7 +46,7 @@ Can also use the setup file to install or create built distribution
 
 	python setup.py install
 
-or 
+or
 
 	python setup.py dist (--format=rpm/wininst/etc)
 
@@ -59,7 +59,7 @@ Or finally, for Window users, can download window installer exe from [https://dw
 
 Wrapper for combining numpy ndarrays with meta information. Also has useful utilities;
 for example, reading in data files from PZFlex, binary data from oscilloscopes, talking
-to impedance analysers, etc. 
+to impedance analysers, etc.
 
 Module comes with demonstration function to illustrate metaArray usage. In python shell:
 
@@ -67,3 +67,5 @@ Module comes with demonstration function to illustrate metaArray usage. In pytho
 >
 > demo()
 
+
+![Tests](https://github.com/UltrasoundSam/metaArray/actions/workflows/tests.yaml/badge.svg)

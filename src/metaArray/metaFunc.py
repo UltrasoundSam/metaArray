@@ -23,7 +23,8 @@ from .misc import eng_unit
 ####################
 
 
-def padding_calc(metAry: metaArray, min_freq: float = 0., max_freq: float = 1e6,
+def padding_calc(metAry: metaArray, min_freq: float = 0.,
+                 max_freq: float = 1e6,
                  resolution: float = 2048) -> int:
     """
     For a given 1D metaArray, work out the overall length of array necessary
@@ -62,7 +63,7 @@ def meta_fir_len(metAry: metaArray, length: float = 0.005) -> int:
 
     Input:
         metAry      Targed metaArray
-        length      Desire length/duration of the filter as ratio to len(metAry)
+        length      Desire length/duration of filter as ratio to len(metAry)
 
     Output:
         length      Length of the desire FIR filter (Int)
@@ -139,7 +140,8 @@ def meta_lowpass(metAry: metaArray, cut_freq: float,
     Nyquist = ary.get_smp_rate() / 2
 
     # Normalise frequency
-    name_str = 'Low pass filtered at ' + eng_unit(cut_freq, unit='Hz', sigfig=3)
+    name_str = 'Low pass filtered at ' + eng_unit(cut_freq, unit='Hz',
+                                                  sigfig=3)
     freq = float(cut_freq) / Nyquist
 
     # Number of taps
@@ -148,7 +150,8 @@ def meta_lowpass(metAry: metaArray, cut_freq: float,
     elif type(length) is int:
         pass
     else:
-        raise ValueError(f'Unexpected variable type for length: {type(length)}')
+        msg = f'Unexpected variable type for length: {type(length)}'
+        raise ValueError(msg)
 
     # a = [1.]
     b = ss.firwin(length, freq, window=window)

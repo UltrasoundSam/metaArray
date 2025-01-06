@@ -447,7 +447,7 @@ class data_out1(FlexFiles):
         self.A1 = None          # A1 record structure
 
         self.A_idx = None       # An index of all the A records
-        self.nentry = None      # Number of record entries, i.e. len(self.A_idx)
+        self.nentry = None      # Number of record entries: len(self.A_idx)
 
         # The list of data record descriptions (index)
         self.desc_lst = None
@@ -463,8 +463,8 @@ class data_out1(FlexFiles):
 
         # Check if this agree with the spec
         if header2[0].strip() != 'dat1':
-            print('The first header record do not match description, ' +
-                  'this binary record do not seem to be a Flex data out1 file.')
+            print('The first header record do not match description, this ' +
+                  'binary record do not seem to be a Flex data out1 file.')
 
             raise ValueError(f'Header record 1, {hdr2[0][0]} should be: ' +
                              f'"dat1", got "{header2[0]}" instead.')
@@ -697,7 +697,7 @@ class data_out1(FlexFiles):
                 B[2] = length                       # Length of the array
                 B[3] = (irange, jrange, krange)   # Shape of the array
 
-                # In B1 records, data is truncated in to 1,000,000 length pieces
+                # In B1 records, data is truncated in to 1M length pieces
                 B_parts = 0             # Number of fortran record for B
                 B_pos = i + 1
                 # Difficult to do byte count, could be double precision
@@ -746,7 +746,7 @@ class data_out1(FlexFiles):
             # A_idx[n][2] = time        # Problem time when data was saved
             # A_idx[n][3] = B           # B record structure (type, length,
             #                                                 shape)
-            # A_idx[n][4] = B_pos       # Position of the first Fortran B record
+            # A_idx[n][4] = B_pos       # Position of the 1st Fortran B record
             # A_idx[n][5] = B_parts     # Number of Fortran record parts
             # A_idx[n][6] = [ibegin, jbegin, kbegin]
             # A_idx[n][7] = [iend, jend, kend]
@@ -977,8 +977,8 @@ class pout_hist(FlexFiles):
 
         # Check if this agree with the spec
         if header2[0].strip() != 'hist':
-            print('The first header record do not match description, ' +
-                  'this binary record do not seem to be a Flex data out1 file.')
+            print('The first header record do not match description, this ' +
+                  'binary record do not seem to be a Flex data out1 file.')
 
             raise ValueError(f'Header record 1, {hdr2[0][0]} should be: "dat1", got "{header2[0]}" instead')  # noqa: E501
 
@@ -1308,7 +1308,7 @@ class pout_hist(FlexFiles):
         desc += 'This flex pout hist file is generated at: ' + self.date
         desc += linesep
 
-        desc += 'This file has ' + str(self.nrecd) + ' data records: ' + linesep
+        desc += f'This file has {self.nrecd} data records: {linesep}'
 
         for i in range(len(desc_lst)):
             desc += 'Record number ' + str(i) + ':' + linesep

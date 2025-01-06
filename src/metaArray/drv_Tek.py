@@ -11,7 +11,7 @@ import typing
 import numpy.typing as npt
 from operator import itemgetter
 from itertools import groupby
-from numpy import array, float_
+from numpy import array, float64
 from struct import unpack
 from decimal import Decimal
 
@@ -322,7 +322,8 @@ class isf:
                     # Very bad, found header but no data!
                     # Show debug info if requested, ignore otherwise
                     if debug:
-                        debug_str += 'Failed to find the following data stream!'
+                        msg = 'Failed to find the following data stream!'
+                        debug_str += msg
                         print(debug_str)
 
                     f_pos += 6
@@ -445,7 +446,7 @@ class isf:
                 index_str = "\t" + str(i) + " : "
                 hdr_pos, hdr_len, data_pos, data_len, hdr_dict, unpack_str = entry  # noqa: E501
 
-                desc += index_str + "Header location: " + str(hdr_pos) + linesep
+                desc += index_str + "Header location: " + str(hdr_pos) + linesep  # noqa: E501
                 desc += index_str + "Header length: " + str(hdr_len) + linesep
                 desc += index_str + "Data location: " + str(data_pos) + linesep
                 desc += index_str + "Data length: " + str(data_len) + linesep
@@ -748,8 +749,8 @@ class TDS2000_csv(CSVFile):
 
         if debug:
             if self.cols != 6:
-                print("\t*** Warning, the file does not contain exactly 6 data \
-                        columns, it may not be a valid TDS2000 csv file.")
+                print("\t*** Warning, the file does not contain exactly 6 \
+                        data columns, it may not be a valid TDS2000 csv file.")
 
             model = self.getrow(15)[:2]
             if (model[0] != 'Model Number') or (model[1][:4] != 'TDS2'):
@@ -845,7 +846,7 @@ class TDS2000_csv(CSVFile):
         ary.update_range()
         return ary
 
-    def __getitem__(self, key: int) -> npt.NDArray[float_]:
+    def __getitem__(self, key: int) -> npt.NDArray[float64]:
         """
         Return the requested data as numpy array.
 
@@ -921,8 +922,8 @@ class DPO2000_csv(CSVFile):
 
         if debug:
             if self.cols != 2:
-                print("\t*** Warning, the file does not contain exactly 2 data \
-                        columns, it may not be a valid DPO2000 csv file.")
+                print("\t*** Warning, the file does not contain exactly 2 \
+                        data columns, it may not be a valid DPO2000 csv file.")
 
             model = self.getrow(0)[:2]
             if (model[0] != 'Model') or (model[1][:4] != 'DPO2'):
