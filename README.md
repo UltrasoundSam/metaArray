@@ -67,5 +67,4 @@ Module comes with demonstration function to illustrate metaArray usage. In pytho
 >
 > demo()
 
-
-![Tests](https://github.com/UltrasoundSam/metaArray/actions/workflows/tests.yaml/badge.svg)
+![Tests](https://github.com/UltrasoundSam/metaArray/actions/workflows/tests.yml/badge.svg)
