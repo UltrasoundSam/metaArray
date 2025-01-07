@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "metaarray"
-version = "2.0.1"
+version = "2.0.2"
 description = "Meta-info container for numpy ndarray, with associate libraries"
-authors = [ "Sam Hill <s.hill@yorksj.ac.uk>" ]
+authors = [ "Sam Hill <s.hill@yorksj.ac.uk>", 'Charley (Yichao) Fan' ]
 license = "GPL-2.0-only"
 readme = "README.md"
 packages = [{include = "metaArray", from = "src"}]

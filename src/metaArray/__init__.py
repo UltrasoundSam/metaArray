@@ -1,5 +1,6 @@
 # Setting out version number
-__version__ = '2.0.1'
+from importlib.metadata import version
+__version__ = version('metaarray')
 
 # Import required functionality
 from .core import metaArray
