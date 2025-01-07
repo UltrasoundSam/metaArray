@@ -7,48 +7,53 @@ Wrapper for combining numpy ndarrays with meta information
 
 # INSTALLATION
 
-===================
-Requirements
-===================
+### Requirements
 
-Before installing, make sure that you have installed all of the prerequiste dependancies:
 
-	Python 		- (Tested on 3.11 and 3.12)							(https://www.python.org/)
-	Numpy		- For data processing and scientific computing		(http://www.numpy.org/)
-	Matplotlib	- For plotting										(http://matplotlib.org/)
-	H5Py		- For stable and cross platform data storage		(http://www.h5py.org/)
-	Scipy		- For scientific computing							(http://www.scipy.org/)
-    pySerial    - For serial port communications                    (https://pythonhosted.org/pyserial/)
+The module has the following dependencies:
 
-===================
-Install
-===================
+- [Python](https://www.python.org/) - (Tested on 3.11 and 3.12)
+- [Numpy](http://www.numpy.org/) - For data processing and scientific computing
+- [Matplotlib](http://matplotlib.org/)  - For plotting
+- [H5Py](http://www.h5py.org/) - For stable and cross platform data storage
+- [Scipy](http://www.scipy.org/) - For scientific computing
+- [pySerial](https://pyserial.readthedocs.io/en/latest/pyserial.html) - For serial port communications
 
------------------------
-PIP - Recommended
------------------------
+# Install
+
+### PIP - Recommended
 
 Very easy to install - once downloaded and extracted, simply use pip to install:
 
-	pip install /path/to/download/metaArray
+```
+pip install /path/to/download/metaArray
+```
 
 If already installed, and you want to update to a newer version of metaArray:
 
-	pip install --upgrade /path/to/download/metaArray
+```
+pip install --upgrade /path/to/download/metaArray
+```
 
 To uninstall:
 
-	pip uninstall metaArray
+```
+pip uninstall metaArray
+```
 
 -----------------------
 
 Can also use the setup file to install or create built distribution
 
-	python setup.py install
+```
+python setup.py install
+```
 
 or
 
-	python setup.py dist (--format=rpm/wininst/etc)
+```
+python setup.py dist (--format=rpm/wininst/etc)
+```
 
 ----------------------
 
