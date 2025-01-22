@@ -10,7 +10,7 @@ packages = [{include = "metaArray", from = "src"}]
 [tool.poetry.dependencies]
 python = ">=3.11"
 numpy = ">=1.21"
-scipy = ">=1.7"
+scipy = ">=1.7,<=1.12"
 matplotlib = ">=3.4"
 h5py = ">=3.4"
 pyserial = ">=3.4"
