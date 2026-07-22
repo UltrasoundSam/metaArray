@@ -8,18 +8,17 @@ Tests I/O functionality of module
 """
 
 from pathlib import Path
-import typing
 import pytest
 import os
 
 import metaArray as ma
 
 
-def isf_files() -> typing.Iterator[str]:
+def isf_files() -> list[str]:
     # Generates list of all isf files in directory
     basedir = os.path.join('.', 'src', 'metaArray', 'example')
-    files = (os.path.join(basedir, fi) for fi in os.listdir(basedir)
-             if fi.endswith('.isf'))
+    files = [os.path.join(basedir, fi) for fi in os.listdir(basedir)
+             if fi.endswith('.isf')]
     return files
 
 
